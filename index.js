@@ -1,20 +1,20 @@
 const express = require('express');
-const cors = require('cors'); // ⬅️ import this
+const cors = require('cors');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(cors()); // ⬅️ enable CORS
+app.use(cors());
 app.use(express.json());
 
 const messages = [];
 
-// Health check route for Render
+// Health check
 app.get('/', (req, res) => {
   res.send('✅ Expense Tracker API is running');
 });
 
-// Receive and parse SMS message
+// Parse SMS
 app.post('/api/parse-sms', (req, res) => {
   const { message, timestamp } = req.body;
 
@@ -22,15 +22,20 @@ app.post('/api/parse-sms', (req, res) => {
     return res.status(400).json({ error: '❌ Missing message or timestamp' });
   }
 
-  const amountMatch = message.match(/بقيمة\s([\d,.]+)/);
-  const amount = amountMatch ? amountMatch[1] : null;
+  // Extract amount: e.g., "بمبلغ 1.0 دينار اردني"
+  const amountMatch = message.match(/(?:بمبلغ|قيمة)\s+([\d.,]+)\s+دينار(?:\s+اردني)?/i);
+  const amount = amountMatch ? parseFloat(amountMatch[1].replace(',', '')) : null;
 
-  const merchantMatch = message.match(/من\s(.+?)\s+الرصيد/);
+  // Extract merchant: anything after "الى" up to "الرصيد"
+  const merchantMatch = message.match(/الى\s+(.+?)\s+الرصيد/i);
   const merchant = merchantMatch ? merchantMatch[1].trim() : null;
+
+  // Convert timestamp to ISO format (optional but safer for frontend)
+  const isoTimestamp = new Date(timestamp).toISOString();
 
   const parsed = {
     originalMessage: message,
-    timestamp,
+    timestamp: isoTimestamp,
     amount,
     merchant,
   };
@@ -42,12 +47,11 @@ app.post('/api/parse-sms', (req, res) => {
   res.json({ success: true, data: parsed });
 });
 
-// Get all stored messages
+// Get all
 app.get('/api/messages', (req, res) => {
   res.json(messages);
 });
 
-// Start the server
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
