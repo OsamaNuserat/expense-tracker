@@ -9,55 +9,96 @@ app.use(express.json());
 
 const messages = [];
 
-// Util: Convert '7 Jun 2025 at 1:19 PM' => ISO string
-function parseCustomTimestamp(input) {
-  // Remove 'at' and fix to a valid format
-  const cleaned = input.replace('at', '').trim(); // '7 Jun 2025 1:19 PM'
-  const date = new Date(cleaned);
-  return isNaN(date.getTime()) ? null : date.toISOString();
-}
-
 app.get('/', (req, res) => {
-  res.send('✅ Expense Tracker API is running');
+    res.send('✅ Expense Tracker API is running');
 });
 
 app.post('/api/parse-sms', (req, res) => {
-  const { message, timestamp } = req.body;
+    const { message, timestamp } = req.body;
 
-  if (!message || !timestamp) {
-    return res.status(400).json({ error: '❌ Missing message or timestamp' });
-  }
+    if (!message) {
+        return res.status(400).json({ error: '❌ Missing message or timestamp' });
+    }
 
-  const amountMatch = message.match(/(?:بمبلغ|قيمة)\s+([\d.,]+)\s+دينار(?:\s+اردني)?/i);
-  const amount = amountMatch ? parseFloat(amountMatch[1].replace(',', '')) : null;
+    const irrelevantKeywords = ['تهنئكم', 'عيد', 'كل عام', 'أضحى', 'العام الهجري', 'رمضان', 'مبارك', 'بمناسبة'];
+    const isIrrelevant = irrelevantKeywords.some((keyword) => message.includes(keyword));
+    if (isIrrelevant) {
+        return res.json({ skipped: true, reason: 'Non-transactional message' });
+    }
 
-  const merchantMatch = message.match(/الى\s+(.+?)\s+الرصيد/i);
-  const merchant = merchantMatch ? merchantMatch[1].trim() : null;
+    const isIncome = /حوالة كليك واردة|تحويل وارد|ايداع|راتب/.test(message);
+    const isExpense = /حوالة كليك صادرة|شراء|دفع|خصم|اقتطاع/.test(message);
 
-  const isoTimestamp = parseCustomTimestamp(timestamp);
+    let amount = null;
 
-  if (!isoTimestamp) {
-    return res.status(400).json({ error: '❌ Invalid timestamp format' });
-  }
+    const amountMatch = message.match(/(?:بمبلغ|قيمة|مبلغ|قيد راتب)\s*([\d.,]+)\s+دينار(?:\s+اردني)?/i);
+    amount = amountMatch ? parseFloat(amountMatch[1].replace(',', '')) : null;
 
-  const parsed = {
-    originalMessage: message,
-    timestamp: isoTimestamp,
-    amount,
-    merchant,
-  };
+    if (!amount) {
+        return res.json({ skipped: true, reason: 'No valid amount' });
+    }
 
-  messages.push(parsed);
+    let merchant;
+    const merchantMatch = message.match(/(?:من|الى)\s+(.*?)\s+الرصيد/i);
+    if (merchantMatch) {
+        let raw = merchantMatch[1].replace(/حسابكم\s*\d+\s*-\s*\d+/, '').trim();
+        if (!raw.match(/بقيمة|بمبلغ|دينار/)) {
+            merchant = raw;
+        }
+    }
 
-  console.log('✅ New expense recorded:', parsed);
+    const isBankFee = ['عمولة', 'رسوم', 'خدمات مصرفية', 'خصم تلقائي', 'اقتطاع'].some((w) => message.includes(w));
+    const isService = ['تسديد الكتروني', 'مدفوعات', 'دفع', 'خدمة'].some((w) => message.includes(w));
 
-  res.json({ success: true, data: parsed });
+    if (!merchant && isBankFee) merchant = 'JIB';
+    if (!merchant && isService) merchant = 'Services';
+
+    let isoTimestamp;
+    if (timestamp) {
+        const parsed = new Date(timestamp);
+        if (isNaN(parsed.getTime())) {
+            return res.status(400).json({ error: '❌ Invalid timestamp format' });
+        }
+        isoTimestamp = parsed.toISOString();
+    } else {
+        const nowJordan = new Date().toLocaleString('en-US', { timeZone: 'Asia/Amman' });
+        isoTimestamp = new Date(nowJordan).toISOString();
+    }
+
+    const parsedMessage = {
+        originalMessage: message,
+        timestamp: isoTimestamp,
+        amount,
+        merchant,
+        type: isIncome ? 'income' : isExpense ? 'expense' : 'unknown',
+    };
+
+    messages.push(parsedMessage);
+    res.json({ success: true, data: parsedMessage });
 });
 
 app.get('/api/messages', (req, res) => {
-  res.json(messages);
+    res.json(messages);
+});
+
+app.get('/api/summary', (req, res) => {
+    const income = messages.filter((m) => m.type === 'income').reduce((sum, m) => sum + m.amount, 0);
+
+    const expense = messages.filter((m) => m.type === 'expense').reduce((sum, m) => sum + m.amount, 0);
+
+    res.json({
+        income,
+        expense,
+        balance: income - expense,
+    });
+});
+
+const path = require('path');
+
+app.get('/dashboard', (req, res) => {
+    res.sendFile(path.join(__dirname, 'dashboard.html'));
 });
 
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+    console.log(`🚀 Server running on port ${PORT}`);
 });
