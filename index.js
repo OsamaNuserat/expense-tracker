@@ -1,20 +1,26 @@
 const express = require('express');
-const cors = require('cors'); // ⬅️ import this
+const cors = require('cors');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(cors()); // ⬅️ enable CORS
+app.use(cors());
 app.use(express.json());
 
 const messages = [];
 
-// Health check route for Render
+// Util: Convert '7 Jun 2025 at 1:19 PM' => ISO string
+function parseCustomTimestamp(input) {
+  // Remove 'at' and fix to a valid format
+  const cleaned = input.replace('at', '').trim(); // '7 Jun 2025 1:19 PM'
+  const date = new Date(cleaned);
+  return isNaN(date.getTime()) ? null : date.toISOString();
+}
+
 app.get('/', (req, res) => {
   res.send('✅ Expense Tracker API is running');
 });
 
-// Receive and parse SMS message
 app.post('/api/parse-sms', (req, res) => {
   const { message, timestamp } = req.body;
 
@@ -22,17 +28,21 @@ app.post('/api/parse-sms', (req, res) => {
     return res.status(400).json({ error: '❌ Missing message or timestamp' });
   }
 
-  const amountMatch = message.match(/(?:بمبلغ|قيمة)\s+([\d.,]+)\s+(?:دينار(?:\s+اردني)?)/i);
-const amount = amountMatch ? parseFloat(amountMatch[1].replace(',', '')) : null;
+  const amountMatch = message.match(/(?:بمبلغ|قيمة)\s+([\d.,]+)\s+دينار(?:\s+اردني)?/i);
+  const amount = amountMatch ? parseFloat(amountMatch[1].replace(',', '')) : null;
 
-  const merchantMatch = message.match(/من\s(.+?)\s+الرصيد/);
+  const merchantMatch = message.match(/الى\s+(.+?)\s+الرصيد/i);
   const merchant = merchantMatch ? merchantMatch[1].trim() : null;
 
-  const isoTimestamp = new Date(timestamp).toISOString();
+  const isoTimestamp = parseCustomTimestamp(timestamp);
+
+  if (!isoTimestamp) {
+    return res.status(400).json({ error: '❌ Invalid timestamp format' });
+  }
 
   const parsed = {
     originalMessage: message,
-    timestamp : isoTimestamp,
+    timestamp: isoTimestamp,
     amount,
     merchant,
   };
@@ -44,12 +54,10 @@ const amount = amountMatch ? parseFloat(amountMatch[1].replace(',', '')) : null;
   res.json({ success: true, data: parsed });
 });
 
-// Get all stored messages
 app.get('/api/messages', (req, res) => {
   res.json(messages);
 });
 
-// Start the server
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
