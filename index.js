@@ -4,12 +4,19 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 
-const messages = []; // 🆕 this stores all parsed messages
+const messages = [];
 
+// Health check route for Render
+app.get('/', (req, res) => {
+  res.send('✅ Expense Tracker API is running');
+});
+
+// Receive and parse SMS message
 app.post('/api/parse-sms', (req, res) => {
   const { message, timestamp } = req.body;
+
   if (!message || !timestamp) {
-    return res.status(400).json({ error: 'Missing message or timestamp' });
+    return res.status(400).json({ error: '❌ Missing message or timestamp' });
   }
 
   const amountMatch = message.match(/بقيمة\s([\d,.]+)/);
@@ -25,13 +32,19 @@ app.post('/api/parse-sms', (req, res) => {
     merchant,
   };
 
-  messages.push(parsed); // ⬅️ store it
+  messages.push(parsed);
 
-  console.log('New expense recorded:', parsed);
+  console.log('✅ New expense recorded:', parsed);
 
   res.json({ success: true, data: parsed });
 });
 
+// Get all stored messages
 app.get('/api/messages', (req, res) => {
   res.json(messages);
+});
+
+// Start the server
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
 });
