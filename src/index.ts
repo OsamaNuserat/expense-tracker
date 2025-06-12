@@ -1,29 +1,19 @@
-import express, { Request, Response } from 'express';
-import cors from 'cors';
-import path from 'path';
+import express from 'express';
+import authRoutes from './routes/auth.routes';
 import apiRoutes from './routes/api';
-import authRoutes from './routes/auth';
+import { authenticate } from './middleware/auth.middleware';
 
 const app = express();
-const PORT = process.env.PORT || 3000;
-const dashboardPath = path.join(__dirname, '../public/dashboard.html');
-
-app.use(cors());
 app.use(express.json());
-app.use('/api', apiRoutes);
 
-app.get('/', (req: Request, res: Response) => {
-  res.send('✅ Expense Tracker API is running');
-});
-
-
+// Auth routes
 app.use('/auth', authRoutes);
 
+// Protected routes
+app.use('/api', authenticate, apiRoutes);
 
-app.get('/dashboard', (req: Request, res: Response) => {
-  res.sendFile(dashboardPath);
-});
+app.get('/', (_req, res) => res.send('Expense Tracker API'));
 
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+app.listen(3000, () => {
+  console.log('Server running on http://localhost:3000');
 });
