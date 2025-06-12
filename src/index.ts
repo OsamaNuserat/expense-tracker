@@ -2,6 +2,7 @@ import express, { Request, Response } from 'express';
 import cors from 'cors';
 import path from 'path';
 import apiRoutes from './routes/api';
+import authRoutes from './routes/auth';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -14,6 +15,10 @@ app.use('/api', apiRoutes);
 app.get('/', (req: Request, res: Response) => {
   res.send('✅ Expense Tracker API is running');
 });
+
+
+app.use('/auth', authRoutes);
+
 
 app.get('/dashboard', (req: Request, res: Response) => {
   res.sendFile(dashboardPath);

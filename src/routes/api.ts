@@ -1,11 +1,12 @@
 import { Router, Request, Response } from 'express';
+import { authenticateJWT, AuthRequest } from '../middleware/authenticateJWT';
 import { parseMessage } from '../services/parser';
 import { ParsedMessage } from '../models/message';
 
 const router = Router();
 const messages: ParsedMessage[] = [];
 
-router.post('/parse-sms', (req: Request, res: Response) => {
+router.post('/parse-sms', authenticateJWT, (req: AuthRequest, res: Response) => {
   const { message, timestamp } = req.body;
 
   if (!message) {
@@ -18,12 +19,14 @@ router.post('/parse-sms', (req: Request, res: Response) => {
       return res.json({ skipped: true, reason: 'Irrelevant or invalid message' });
     }
 
-    messages.push(parsed);
+    messages.push({ ...parsed, userId: req.userId });
+
     return res.json({ success: true, data: parsed });
   } catch (err) {
     return res.status(400).json({ error: (err as Error).message });
   }
 });
+
 
 router.get('/messages', (req: Request, res: Response) => {
   res.json(messages);
