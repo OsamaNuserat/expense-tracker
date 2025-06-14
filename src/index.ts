@@ -1,9 +1,12 @@
 import express from 'express';
 import authRoutes from './routes/auth.routes';
 import apiRoutes from './routes/api';
+import cors from 'cors'; 
 import { authenticate } from './middleware/auth.middleware';
 
 const app = express();
+
+app.use(cors());           
 app.use(express.json());
 
 // Auth routes
