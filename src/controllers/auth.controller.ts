@@ -6,6 +6,9 @@ import { generateToken } from '../utils/jwt';
 export async function register(req: Request, res: Response) {
   const { email, password } = req.body;
 
+    console.log(email , password)
+
+
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) return res.status(400).json({ error: 'Email already in use' });
 
@@ -20,6 +23,8 @@ export async function register(req: Request, res: Response) {
 
 export async function login(req: Request, res: Response) {
   const { email, password } = req.body;
+
+  console.log(email , password)
 
   const user = await prisma.user.findUnique({ where: { email } });
   if (!user) return res.status(400).json({ error: 'Invalid credentials' });
