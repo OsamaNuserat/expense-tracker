@@ -4,29 +4,26 @@ import { parseMessage } from '../services/parser';
 
 const router = Router();
 
+
 router.post('/parse-sms', async (req: Request, res: Response) => {
   const userId = (req as any).user.id;
   const { content, timestamp } = req.body;
 
-  // 1) Always save raw Message
-  const savedMsg = await prisma.message.create({
+  const message = await prisma.message.create({
     data: { content, userId },
   });
 
-  // 2) Try to parse it
   const parsed = parseMessage(content, timestamp);
   if (!parsed) {
-    // nothing to do beyond storing raw
-    return res.json({ message: savedMsg, parsed: null });
+    return res.json({ message, parsed: null, record: null });
   }
 
-  // 3) Branch based on type
-  let record;
+  let record = null;
   if (parsed.type === 'expense') {
     record = await prisma.expense.create({
       data: {
         amount: parsed.amount,
-        category: parsed.merchant ?? 'Unknown',
+        category: parsed.category,  
         userId,
       },
     });
@@ -34,62 +31,90 @@ router.post('/parse-sms', async (req: Request, res: Response) => {
     record = await prisma.income.create({
       data: {
         amount: parsed.amount,
-        source: parsed.merchant ?? 'Unknown',
+        source: parsed.category,  
         userId,
       },
     });
   }
 
-  return res.json({ message: savedMsg, parsed, record });
+  return res.json({ message, parsed, record });
 });
+
+
 router.get('/messages', async (req: Request, res: Response) => {
   const userId = (req as any).user.id;
-
   const messages = await prisma.message.findMany({
     where: { userId },
     orderBy: { createdAt: 'desc' },
   });
-
-  return res.json(messages);
+  res.json(messages);
 });
 
-router.get('/expenses/summary', async (req: Request, res: Response) => {
+
+router.get('/expenses/summary', async (req, res) => {
   const userId = (req as any).user.id;
 
-  const summary = await prisma.expense.groupBy({
+  const results = await prisma.expense.groupBy({
     by: ['createdAt'],
     where: { userId },
     _sum: { amount: true },
   });
 
+  const formatted = results.map(r => ({
+    month: r.createdAt.toISOString().slice(0, 7),
+    total: r._sum.amount!,
+  }));
 
-  const rawSummary = await prisma.$queryRaw`
-    SELECT
-      DATE_TRUNC('month', "createdAt") AS month,
-      SUM(amount) AS total
-    FROM "Expense"
-    WHERE "userId" = ${userId}
-    GROUP BY month
-    ORDER BY month DESC
-  `;
-
-  return res.json(rawSummary);
+  res.json(formatted);
 });
+
+
 
 router.get('/incomes/summary', async (req: Request, res: Response) => {
   const userId = (req as any).user.id;
-
-  const rawSummary = await prisma.$queryRaw`
+  const rawSummary = await prisma.$queryRaw<{ month: string; total: number }[]>`
     SELECT
       DATE_TRUNC('month', "createdAt") AS month,
-      SUM(amount) AS total
+      SUM(amount)::float AS total
     FROM "Income"
     WHERE "userId" = ${userId}
     GROUP BY month
-    ORDER BY month DESC
+    ORDER BY month DESC;
   `;
+  res.json(rawSummary);
+});
 
-  return res.json(rawSummary);
+
+// GET /api/expenses/by-category
+router.get('/expenses/by-category', async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user.id;
+    const byCategory = await prisma.expense.groupBy({
+      by: ['category'],
+      where: { userId },
+      _sum: { amount: true },
+    });
+    res.json(byCategory.map(row => ({ category: row.category, total: row._sum.amount! })));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+
+router.get('/incomes/by-category', async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user.id;
+    const byCategory = await prisma.income.groupBy({
+      by: ['source'],
+      where: { userId },
+      _sum: { amount: true },
+    });
+    res.json(byCategory.map(row => ({ category: row.source, total: row._sum.amount! })));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 export default router;

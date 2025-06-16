@@ -1,3 +1,4 @@
+
 export type MessageType = 'income' | 'expense' | 'unknown';
 
 export interface ParsedMessage {
@@ -5,5 +6,6 @@ export interface ParsedMessage {
   timestamp: string;
   amount: number;
   merchant?: string;
+  category: string;
   type: MessageType;
 }
