@@ -2,36 +2,60 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.parseMessage = parseMessage;
 const time_1 = require("../utils/time");
+const KEYWORD_MAP = {
+    عمولة: 'Bank Fee',
+    رسوم: 'Bank Fee',
+    'خدمات مصرفية': 'Bank Fee',
+    سوق: 'Groceries',
+    بقالة: 'Groceries',
+    كهرباء: 'Utilities',
+    مياه: 'Utilities',
+    وقود: 'Transport',
+    بنزين: 'Transport',
+    مطعم: 'Dining',
+    كافيه: 'Dining',
+    'حركة قسط شهري': 'Installment',
+    راتب: 'Salary',
+    ايداع: 'Salary',
+    'حوالة كليك واردة': 'Salary',
+};
 function parseMessage(message, timestamp) {
-    const irrelevantKeywords = ['تهنئكم', 'عيد', 'كل عام', 'أضحى', 'العام الهجري', 'رمضان', 'مبارك', 'بمناسبة'];
-    const isIrrelevant = irrelevantKeywords.some((keyword) => message.includes(keyword));
-    if (isIrrelevant)
+    const skip = ['تهنئكم', 'عيد', 'كل عام'];
+    if (skip.some((kw) => message.includes(kw)))
         return null;
-    const isIncome = /حوالة كليك واردة|تحويل وارد|ايداع|راتب/.test(message);
-    const isExpense = /حوالة كليك صادرة|شراء|دفع|خصم|اقتطاع/.test(message);
-    const amountMatch = message.match(/(?:بمبلغ|قيمة|مبلغ|قيد راتب)\s*([\d.,]+)\s+دينار(?:\s+اردني)?/i);
-    const amount = amountMatch ? parseFloat(amountMatch[1].replace(',', '')) : null;
-    if (!amount)
+    const isCredit = /حوالة كليك واردة|ايداع|راتب/.test(message);
+    const isDebit = /حوالة كليك صادرة|تفويض حركة|تسديد الكتروني|حركة قسط|قيد مبلغ|خصم|اقتطاع/.test(message);
+    let type = isCredit ? 'income' : isDebit ? 'expense' : 'unknown';
+    const amtRegex = /(?:قيد\s*راتب|قيد مبلغ|بقيمة|بمبلغ)\s*([\d.,]+)\s+دينار/;
+    const matchAmt = message.match(amtRegex);
+    if (!matchAmt)
         return null;
+    const amount = parseFloat(matchAmt[1].replace(/,/g, ''));
     let merchant;
-    const merchantMatch = message.match(/(?:من|الى)\s+(.*?)\s+الرصيد/i);
-    if (merchantMatch) {
-        let raw = merchantMatch[1].replace(/حسابكم\s*\d+\s*-\s*\d+/, '').trim();
-        if (!raw.match(/بقيمة|بمبلغ|دينار/)) {
-            merchant = raw;
+    const fromMatch = message.match(/من\s+(.+?)\s+(?:AMMAN|الرصيد)/);
+    const toMatch = message.match(/الى\s+(.+?)\s+الرصيد/);
+    if (fromMatch)
+        merchant = fromMatch[1].trim();
+    else if (toMatch)
+        merchant = toMatch[1].trim();
+    let keyword;
+    for (const [kw, categoryName] of Object.entries(KEYWORD_MAP)) {
+        if (message.includes(kw)) {
+            keyword = categoryName;
+            break;
         }
     }
-    const isBankFee = ['عمولة', 'رسوم', 'خدمات مصرفية', 'خصم تلقائي', 'اقتطاع'].some((w) => message.includes(w));
-    const isService = ['تسديد الكتروني', 'مدفوعات', 'دفع', 'خدمة'].some((w) => message.includes(w));
-    if (!merchant && isBankFee)
-        merchant = 'JIB';
-    if (!merchant && isService)
-        merchant = 'Services';
+    if (!keyword) {
+        keyword = type === 'income' ? 'راتب' : type === 'expense' ? 'Other' : undefined;
+    }
+    const source = message.includes('كليك') ? 'CliQ' : undefined;
     return {
         originalMessage: message,
         timestamp: (0, time_1.getISOTimestamp)(timestamp),
         amount,
         merchant,
-        type: isIncome ? 'income' : isExpense ? 'expense' : 'unknown',
+        category: keyword,
+        type,
+        source,
     };
 }

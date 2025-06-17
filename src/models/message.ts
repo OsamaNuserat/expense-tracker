@@ -8,4 +8,5 @@ export interface ParsedMessage {
   merchant?: string;
   category: string;
   type: MessageType;
+  source: string | undefined;
 }

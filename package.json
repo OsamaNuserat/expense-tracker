@@ -16,7 +16,7 @@
     "express",
     "automation"
   ],
-  "author": "Your Name <youremail@example.com>",
+  "author": "Your Name <osamanuserat3@gmail.com>",
   "license": "MIT",
   "dependencies": {
     "@prisma/client": "^6.9.0",
