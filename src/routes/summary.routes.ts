@@ -1,16 +1,11 @@
 import { Router } from 'express';
-import {
-  getExpenseSummary,
-  getIncomeSummary,
-  getExpensesByCategory,
-  getIncomesByCategory,
-} from '../controllers/summary.controller';
+import * as summaryController from '../controllers/summary.controller';
 
 const router = Router();
 
-router.get('/expenses', getExpenseSummary);
-router.get('/incomes', getIncomeSummary);
-router.get('/expenses/by-category', getExpensesByCategory);
-router.get('/incomes/by-category', getIncomesByCategory);
+router.get('/expenses', summaryController.getExpenseSummary);
+router.get('/incomes', summaryController.getIncomeSummary);
+router.get('/expenses/by-category', summaryController.getExpensesByCategory);
+router.get('/incomes/by-category', summaryController.getIncomesByCategory);
 
 export default router;

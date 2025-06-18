@@ -1,9 +1,9 @@
 import { Router } from 'express';
-import { parseSMS, getMessages } from '../controllers/message.controller';
+import * as messagesController from '../controllers/message.controller';
 
 const router = Router();
 
-router.post('/parse-sms', parseSMS);
-router.get('/', getMessages);
+router.post('/parse-sms', messagesController.parseSMS);
+router.get('/', messagesController.getMessages);
 
 export default router;

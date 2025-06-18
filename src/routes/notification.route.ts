@@ -5,6 +5,4 @@ const router = express.Router();
 
 router.post('/save-token', notificationsController.saveToken);
 
-router.post('/send', notificationsController.sendNotification);
-
 export default router;

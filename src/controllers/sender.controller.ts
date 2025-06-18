@@ -3,30 +3,33 @@ import prisma from '../prisma/client';
 
 export const mapSenderToCategory = async (req: Request, res: Response) => {
   const userId = (req as any).user.id;
-  const { sender, categoryId } = req.body;
+  const { sender, categoryId, messageId } = req.body;
 
-  if (!sender || !categoryId || isNaN(Number(categoryId))) {
-    return res.status(400).json({ error: 'Invalid sender or categoryId' });
+  if (!sender || !categoryId || isNaN(+categoryId) || !messageId || isNaN(+messageId)) {
+    return res.status(400).json({ error: 'sender, categoryId, and messageId are required' });
   }
 
-  const categoryIdNumber = Number(categoryId);
+  const categoryIdNum = +categoryId;
+  const messageIdNum  = +messageId;
 
   const mapping = await prisma.senderCategory.upsert({
     where: {
-      userId_sender: {
-        userId,
-        sender,
-      },
+      userId_sender: { userId, sender },
     },
     update: {
-      categoryId: categoryIdNumber,
+      categoryId: categoryIdNum,
     },
     create: {
       userId,
       sender,
-      categoryId: categoryIdNumber,
+      categoryId: categoryIdNum,
     },
   });
 
-  res.status(201).json(mapping);
+  await prisma.message.update({
+    where: { id: messageIdNum },
+    data: { actionRequired: false },
+  });
+
+  return res.status(201).json(mapping);
 };
