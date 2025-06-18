@@ -28,3 +28,4 @@ Thumbs.db
 coverage/
 .idea/
 Expense_Income_Categorization_Roadmap.md
+sendPushTest.js
