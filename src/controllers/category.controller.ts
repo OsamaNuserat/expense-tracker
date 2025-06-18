@@ -1,70 +1,70 @@
 import { Request, Response } from 'express';
 import prisma from '../prisma/client';
+import createError from 'http-errors';
 
 export const getCategories = async (req: Request, res: Response) => {
-    const userId = (req as any).user.id;
-    const type = req.query.type as string | undefined;
+  const userId = (req as any).user.id;
+  const type = req.query.type as string | undefined;
 
-    const whereClause: any = { userId };
-    if (type) {
-        whereClause.type = type.toUpperCase();
-    }
+  const whereClause: any = { userId };
+  if (type) whereClause.type = type.toUpperCase();
 
-    const categories = await prisma.category.findMany({
-        where: whereClause,
-        orderBy: { createdAt: 'desc' },
-    });
+  const categories = await prisma.category.findMany({
+    where: whereClause,
+    orderBy: { createdAt: 'desc' },
+  });
 
-    res.json(categories);
+  res.json(categories);
 };
 
 export const addCategory = async (req: Request, res: Response) => {
-    try {
-        const userId = (req as any).user.id;
-        const { name, keywords, type } = req.body;
+  const userId = (req as any).user.id;
+  const { name, keywords, type } = req.body;
 
-        if (!name || !type) {
-            return res.status(400).json({ message: 'Name and type are required' });
-        }
+  if (!name || !type) {
+    throw createError(400, 'Name and type are required');
+  }
 
-        const categoryType = type.toUpperCase();
+  const newCategory = await prisma.category.create({
+    data: {
+      userId,
+      name,
+      keywords: keywords || '',
+      type: type.toUpperCase(),
+    },
+  });
 
-        const newCategory = await prisma.category.create({
-            data: {
-                userId,
-                name,
-                keywords: keywords || '',
-                type: categoryType,
-            },
-        });
-
-        res.status(201).json(newCategory);
-    } catch (error) {
-        console.error('Error adding category:', error);
-        res.status(500).json({ message: 'Internal server error' });
-    }
+  res.status(201).json(newCategory);
 };
 
 export const updateCategory = async (req: Request, res: Response) => {
-    const userId = (req as any).user.id;
-    const categoryId = Number(req.params.id);
-    const { name, keywords, type } = req.body;
+  const userId = (req as any).user.id;
+  const categoryId = Number(req.params.id);
+  const { name, keywords, type } = req.body;
 
-    const category = await prisma.category.updateMany({
-        where: { id: categoryId, userId },
-        data: { name, keywords, type },
-    });
+  if (isNaN(categoryId)) throw createError(400, 'Invalid category ID');
 
-    res.json(category);
+  const updated = await prisma.category.updateMany({
+    where: { id: categoryId, userId },
+    data: { name, keywords, type: type?.toUpperCase() },
+  });
+
+  if (updated.count === 0) throw createError(404, 'Category not found or unauthorized');
+
+  res.json({ message: 'Category updated' });
 };
 
 export const deleteCategory = async (req: Request, res: Response) => {
-    const userId = (req as any).user.id;
-    const categoryId = Number(req.params.id);
+  const userId = (req as any).user.id;
+  const categoryId = Number(req.params.id);
 
-    await prisma.category.deleteMany({
-        where: { id: categoryId, userId },
-    });
+  if (isNaN(categoryId)) throw createError(400, 'Invalid category ID');
 
-    res.status(204).send();
+  const deleted = await prisma.category.deleteMany({
+    where: { id: categoryId, userId },
+  });
+
+  if (deleted.count === 0) throw createError(404, 'Category not found or unauthorized');
+
+  res.status(204).send();
 };

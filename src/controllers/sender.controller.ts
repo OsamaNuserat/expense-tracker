@@ -1,16 +1,17 @@
 import { Request, Response } from 'express';
 import prisma from '../prisma/client';
+import createError from 'http-errors';
 
 export const mapSenderToCategory = async (req: Request, res: Response) => {
   const userId = (req as any).user.id;
   const { sender, categoryId, messageId } = req.body;
 
-  if (!sender || !categoryId || isNaN(+categoryId) || !messageId || isNaN(+messageId)) {
-    return res.status(400).json({ error: 'sender, categoryId, and messageId are required' });
+  if (!sender || !categoryId || isNaN(Number(categoryId)) || !messageId || isNaN(Number(messageId))) {
+    throw createError(400, 'sender, categoryId, and messageId are required and must be valid');
   }
 
-  const categoryIdNum = +categoryId;
-  const messageIdNum  = +messageId;
+  const categoryIdNum = Number(categoryId);
+  const messageIdNum = Number(messageId);
 
   const mapping = await prisma.senderCategory.upsert({
     where: {
@@ -31,5 +32,8 @@ export const mapSenderToCategory = async (req: Request, res: Response) => {
     data: { actionRequired: false },
   });
 
-  return res.status(201).json(mapping);
+  return res.status(201).json({
+    message: 'Sender-category mapping saved and message updated',
+    mapping,
+  });
 };

@@ -1,11 +1,17 @@
 import type { Request, Response } from 'express';
+import createError from 'http-errors';
 import { saveExpoToken } from '../utils/expoPush';
 
 export const saveToken = (req: Request, res: Response) => {
   const { token } = req.body as { token?: string };
+
   if (!token) {
-    return res.status(400).json({ message: 'Token is required' });
+    throw createError(400, 'Expo push token is required');
   }
+
   saveExpoToken(token);
-  res.json({ message: 'Token saved successfully' });
+
+  res.status(200).json({
+    message: 'Token saved successfully',
+  });
 };

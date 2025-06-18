@@ -2,15 +2,17 @@ import { Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import prisma from '../prisma/client';
 import { generateToken } from '../utils/jwt';
+import createError from 'http-errors';
 
-export async function register(req: Request, res: Response) {
+export const register = async (req: Request, res: Response) => {
   const { email, password } = req.body;
 
-    console.log(email , password)
-
+  if (!email || !password) {
+    throw createError(400, 'Email and password are required');
+  }
 
   const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing) return res.status(400).json({ error: 'Email already in use' });
+  if (existing) throw createError(400, 'Email already in use');
 
   const hashed = await bcrypt.hash(password, 10);
   const user = await prisma.user.create({
@@ -18,20 +20,22 @@ export async function register(req: Request, res: Response) {
   });
 
   const token = generateToken(user.id);
-  return res.json({ token });
-}
+  res.status(201).json({ token });
+};
 
-export async function login(req: Request, res: Response) {
+export const login = async (req: Request, res: Response) => {
   const { email, password } = req.body;
 
-  console.log(email , password)
+  if (!email || !password) {
+    throw createError(400, 'Email and password are required');
+  }
 
   const user = await prisma.user.findUnique({ where: { email } });
-  if (!user) return res.status(400).json({ error: 'Invalid credentials' });
+  if (!user) throw createError(400, 'Invalid credentials');
 
   const valid = await bcrypt.compare(password, user.password);
-  if (!valid) return res.status(400).json({ error: 'Invalid credentials' });
+  if (!valid) throw createError(400, 'Invalid credentials');
 
   const token = generateToken(user.id);
-  return res.json({ token });
-}
+  res.json({ token });
+};

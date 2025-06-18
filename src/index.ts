@@ -7,6 +7,7 @@ import summaryRoutes from './routes/summary.routes';
 import senderRoutes from './routes/sender.routes';
 import notificationsRouter from "./routes/notification.route";
 import { authenticate } from './middleware/auth.middleware';
+import { errorHandler } from './middleware/errorHandler';
 
 const app = express();
 app.use(cors());
@@ -19,6 +20,7 @@ app.use('/api/categories', authenticate, categoryRoutes);
 app.use('/api/notifications', notificationsRouter);
 app.use('/api/summary', authenticate, summaryRoutes);
 app.use('/api/sender-category', authenticate, senderRoutes);
+app.use(errorHandler);
 
 app.get('/', (_req, res) => res.send('Expense Tracker API'));
 
