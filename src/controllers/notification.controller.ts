@@ -1,7 +1,6 @@
 import type { Request, Response } from 'express';
 import createError from 'http-errors';
-import { saveExpoToken, getUserTokens } from '../utils/expoPush';
-import fetch from 'node-fetch';
+import { saveExpoToken, sendPushToUser } from '../utils/expoPush';
 
 export const saveToken = async (req: Request, res: Response) => {
   const userId = (req as any).user.id;
@@ -11,31 +10,16 @@ export const saveToken = async (req: Request, res: Response) => {
   res.status(200).json({ message: 'Token saved' });
 };
 
-export const sendPushToUser = async (req: Request, res: Response) => {
+export const sendNotification = async (req: Request, res: Response) => {
   const userId = (req as any).user.id;
   const { title, body, data } = req.body;
 
-  const tokens = await getUserTokens(userId);
-  if (tokens.length === 0) return res.status(204).send();
+  if (!title || !body) {
+    return res.status(400).json({ message: 'Title and body are required' });
+  }
 
-  const messages = tokens.map(token => ({
-    to: token,
-    sound: 'default',
-    title,
-    body,
-    data,
-  }));
+  await sendPushToUser(userId, title, body, data);
 
-  const response = await fetch('https://exp.host/--/api/v2/push/send', {
-    method: 'POST',
-    headers: {
-      Accept: 'application/json',
-      'Accept-encoding': 'gzip, deflate',
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(messages),
-  });
+  res.status(200).json({ message: 'Notification sent' });
+}
 
-  const result = await response.json();
-  res.json({ result });
-};

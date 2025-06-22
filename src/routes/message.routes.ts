@@ -6,5 +6,6 @@ const router = Router();
 
 router.post('/parse-sms', asyncHandler(messagesController.parseSMS));
 router.get('/', asyncHandler(messagesController.getMessages));
+router.get('/:id', asyncHandler(messagesController.getMessageById));
 
 export default router;
