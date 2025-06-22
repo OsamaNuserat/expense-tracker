@@ -1,12 +1,22 @@
 import fetch from 'node-fetch';
+import prisma from '../prisma/client';
 
 let expoPushTokens: string[] = [];
 
 
-export function saveExpoToken(token: string) {
-  if (!expoPushTokens.includes(token)) {
-    expoPushTokens.push(token);
+export async function saveExpoToken(userId: number, token: string) {
+  const exists = await prisma.pushToken.findUnique({ where: { token } });
+  if (!exists) {
+    await prisma.pushToken.create({ data: { token, userId } });
   }
+}
+
+export async function getUserTokens(userId: number) {
+  const tokens = await prisma.pushToken.findMany({
+    where: { userId },
+    select: { token: true },
+  });
+  return tokens.map(t => t.token);
 }
 
 export async function sendPushToAll(title: string, body: string, data: any = {}) {

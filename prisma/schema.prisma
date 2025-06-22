@@ -14,39 +14,39 @@ datasource db {
 }
 
 model User {
-  id                Int               @id @default(autoincrement())
-  email             String            @unique
-  password          String
-  createdAt         DateTime          @default(now())
-  messages          Message[]
-  expenses          Expense[]
-  incomes           Income[]
-  categories        Category[]
-  senderCategories  SenderCategory[]   
+  id               Int              @id @default(autoincrement())
+  email            String           @unique
+  password         String
+  createdAt        DateTime         @default(now())
+  messages         Message[]
+  expenses         Expense[]
+  incomes          Income[]
+  categories       Category[]
+  senderCategories SenderCategory[]
+  pushTokens       PushToken[]
 }
 
 model Message {
-  id        Int      @id @default(autoincrement())
-  content   String
-  user      User     @relation(fields: [userId], references: [id])
-  userId    Int
+  id             Int      @id @default(autoincrement())
+  content        String
+  user           User     @relation(fields: [userId], references: [id])
+  userId         Int
   actionRequired Boolean  @default(true)
-  createdAt DateTime @default(now())
+  createdAt      DateTime @default(now())
 }
 
 model Category {
-  id                Int               @id @default(autoincrement())
-  user              User              @relation(fields: [userId], references: [id])
-  userId            Int
-  name              String
-  keywords          String?
-  type              CategoryType
-  createdAt         DateTime          @default(now())
-  expenses          Expense[]
-  incomes           Income[]
-  senderCategories  SenderCategory[]  
+  id               Int              @id @default(autoincrement())
+  user             User             @relation(fields: [userId], references: [id])
+  userId           Int
+  name             String
+  keywords         String?
+  type             CategoryType
+  createdAt        DateTime         @default(now())
+  expenses         Expense[]
+  incomes          Income[]
+  senderCategories SenderCategory[]
 }
-
 
 enum CategoryType {
   EXPENSE
@@ -74,15 +74,21 @@ model Income {
 }
 
 model SenderCategory {
-  id         Int          @id @default(autoincrement())
-  user       User         @relation(fields: [userId], references: [id])
+  id         Int      @id @default(autoincrement())
+  user       User     @relation(fields: [userId], references: [id])
   userId     Int
   sender     String
-  category   Category     @relation(fields: [categoryId], references: [id])
+  category   Category @relation(fields: [categoryId], references: [id])
   categoryId Int
-  createdAt  DateTime     @default(now())
+  createdAt  DateTime @default(now())
 
   @@unique([userId, sender])
 }
 
-
+model PushToken {
+  id        Int      @id @default(autoincrement())
+  token     String   @unique
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
+  createdAt DateTime @default(now())
+}
