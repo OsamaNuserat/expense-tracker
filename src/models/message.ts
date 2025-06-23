@@ -1,12 +1,20 @@
-
-export type MessageType = 'income' | 'expense' | 'unknown';
-
 export interface ParsedMessage {
   originalMessage: string;
   timestamp: string;
   amount: number;
-  merchant?: string;
+  merchant: string | null;
   category: string;
-  type: MessageType;
-  source: string | undefined;
+  type: 'expense' | 'income' | 'unknown';
+  source: string | null; 
 }
+
+export type JsonValue = 
+  | string 
+  | number 
+  | boolean 
+  | null 
+  | { [key: string]: JsonValue } 
+  | JsonValue[];
+
+export type JsonObject = { [key: string]: JsonValue };
+export type JsonArray = JsonValue[];

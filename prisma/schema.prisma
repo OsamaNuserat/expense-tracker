@@ -1,9 +1,4 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
+// Updated Prisma schema
 generator client {
   provider = "prisma-client-js"
 }
@@ -22,8 +17,8 @@ model User {
   expenses         Expense[]
   incomes          Income[]
   categories       Category[]
-  senderCategories SenderCategory[]
   pushTokens       PushToken[]
+  survivalBudgets  SurvivalBudget[]   
 }
 
 model Message {
@@ -31,8 +26,8 @@ model Message {
   content        String
   user           User     @relation(fields: [userId], references: [id])
   userId         Int
-  actionRequired Boolean  @default(true)
   createdAt      DateTime @default(now())
+  parsedData     Json?    // Added to store parsed message data
 }
 
 model Category {
@@ -45,7 +40,8 @@ model Category {
   createdAt        DateTime         @default(now())
   expenses         Expense[]
   incomes          Income[]
-  senderCategories SenderCategory[]
+
+  @@unique([userId, name], name: "userId_name")
 }
 
 enum CategoryType {
@@ -54,35 +50,25 @@ enum CategoryType {
 }
 
 model Expense {
-  id         Int      @id @default(autoincrement())
+  id         Int        @id @default(autoincrement())
   amount     Float
-  category   Category @relation(fields: [categoryId], references: [id])
+  category   Category   @relation(fields: [categoryId], references: [id])
   categoryId Int
-  user       User     @relation(fields: [userId], references: [id])
+  user       User       @relation(fields: [userId], references: [id])
   userId     Int
-  createdAt  DateTime @default(now())
+  merchant   String?    // Added to store merchant info
+  createdAt  DateTime   @default(now())
 }
 
 model Income {
-  id         Int      @id @default(autoincrement())
+  id         Int        @id @default(autoincrement())
   amount     Float
-  category   Category @relation(fields: [categoryId], references: [id])
+  category   Category   @relation(fields: [categoryId], references: [id])
   categoryId Int
-  user       User     @relation(fields: [userId], references: [id])
+  user       User       @relation(fields: [userId], references: [id])
   userId     Int
-  createdAt  DateTime @default(now())
-}
-
-model SenderCategory {
-  id         Int      @id @default(autoincrement())
-  user       User     @relation(fields: [userId], references: [id])
-  userId     Int
-  sender     String
-  category   Category @relation(fields: [categoryId], references: [id])
-  categoryId Int
-  createdAt  DateTime @default(now())
-
-  @@unique([userId, sender])
+  merchant   String?    // Added to store merchant info
+  createdAt  DateTime   @default(now())
 }
 
 model PushToken {
@@ -91,4 +77,17 @@ model PushToken {
   user      User     @relation(fields: [userId], references: [id])
   userId    Int
   createdAt DateTime @default(now())
+}
+
+model SurvivalBudget {
+  id           Int       @id @default(autoincrement())
+  user         User      @relation(fields: [userId], references: [id])
+  userId       Int
+  amount       Float
+  startDate    DateTime
+  endDate      DateTime
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@unique([userId, startDate])
 }

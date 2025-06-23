@@ -3,6 +3,7 @@ import bcrypt from 'bcrypt';
 import prisma from '../prisma/client';
 import { generateToken } from '../utils/jwt';
 import createError from 'http-errors';
+import { ensureDefaultCategories } from '../services/categoryService';
 
 export const register = async (req: Request, res: Response) => {
   const { email, password } = req.body;
@@ -20,7 +21,9 @@ export const register = async (req: Request, res: Response) => {
   });
 
   const token = generateToken(user.id);
-  res.status(201).json({ token });
+  await ensureDefaultCategories(user.id);
+
+    res.status(201).json({ user: { id: user.id, email: user.email }, token });
 };
 
 export const login = async (req: Request, res: Response) => {

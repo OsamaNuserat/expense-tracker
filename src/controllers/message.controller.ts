@@ -1,9 +1,9 @@
 import { Request, Response } from 'express';
 import prisma from '../prisma/client';
 import { parseMessage } from '../services/parser';
-import { CategoryType } from '@prisma/client';
 import createError from 'http-errors';
 import { sendPushToUser } from '../utils/expoPush';
+import { CategoryType, Prisma } from '@prisma/client';
 
 export const parseSMS = async (req: Request, res: Response) => {
     const userId = (req as any).user.id;
@@ -11,83 +11,124 @@ export const parseSMS = async (req: Request, res: Response) => {
 
     if (!content) throw createError(400, 'Message content is required');
 
-    const message = await prisma.message.create({
-        data: { content, userId },
-    });
-
     const parsed = parseMessage(content, timestamp);
+
+    const message = await prisma.message.create({
+        data: {
+            content,
+            userId,
+            parsedData: parsed
+                ? ({
+                      originalMessage: parsed.originalMessage,
+                      timestamp: parsed.timestamp,
+                      amount: parsed.amount,
+                      merchant: parsed.merchant,
+                      category: parsed.category,
+                      type: parsed.type,
+                      source: parsed.source,
+                  } as Prisma.JsonObject)
+                : Prisma.DbNull,
+        },
+    });
 
     if (!parsed) {
         return res.json({
-            message,
-            parsed: null,
-            record: null,
             actionRequired: false,
-        });
-    }
-
-    if (parsed.source === 'CliQ') {
-        await sendPushToUser(userId, 'New CliQ SMS', `From: ${parsed.merchant}. Tap to categorize.`, {
-            messageId: message.id,
-        });
-        return res.json({
-            message,
-            parsed,
-            record: null,
-            actionRequired: true,
-        });
-    }
-
-    let category = null;
-    const senderMap = await prisma.senderCategory.findFirst({
-        where: { userId, sender: parsed.merchant },
-    });
-
-    if (senderMap) {
-        category = await prisma.category.findUnique({
-            where: { id: senderMap.categoryId },
-        });
-    }
-
-    if (!category) {
-        category = await prisma.category.findFirst({
-            where: {
-                userId,
-                type: parsed.type.toUpperCase() as CategoryType,
-                OR: [
-                    { name: { equals: parsed.category, mode: 'insensitive' } },
-                    { keywords: { contains: parsed.category, mode: 'insensitive' } },
-                ],
+            message: {
+                id: message.id,
+                content: message.content,
+                createdAt: message.createdAt,
             },
         });
     }
 
-    const actionRequired = !category;
-    let record = null;
+    const responseBase = {
+        actionRequired: false,
+        message: {
+            id: message.id,
+            content: message.content,
+            createdAt: message.createdAt,
+        },
+        transaction: {
+            type: parsed.type,
+            amount: parsed.amount,
+            merchant: parsed.merchant,
+            category: parsed.category,
+            timestamp: parsed.timestamp,
+        },
+    };
 
-    if (category) {
-        if (parsed.type === 'expense') {
-            record = await prisma.expense.create({
-                data: {
-                    amount: parsed.amount,
-                    categoryId: category.id,
-                    userId,
-                },
-            });
-        } else if (parsed.type === 'income') {
-            record = await prisma.income.create({
-                data: {
-                    amount: parsed.amount,
-                    categoryId: category.id,
-                    userId,
-                },
-            });
-        }
+    // Always require action for CliQ messages
+    if (parsed.source === 'CliQ') {
+        await sendPushToUser(
+            userId,
+            'Categorize CliQ Transaction',
+            `From: ${parsed.merchant}. Amount: ${parsed.amount} JOD. Tap to categorize.`,
+            { messageId: message.id }
+        );
+        return res.json({
+            ...responseBase,
+            actionRequired: true,
+        });
     }
 
-    res.json({ message, parsed, record, actionRequired });
-};
+    const category = await prisma.category.findFirst({
+        where: {
+            userId,
+            type: parsed.type.toUpperCase() as CategoryType,
+            OR: [
+                { name: { equals: parsed.category, mode: 'insensitive' } },
+                { keywords: { contains: parsed.category, mode: 'insensitive' } },
+            ],
+        },
+    });
 
+    if (!category) {
+        await sendPushToUser(
+            userId,
+            'Categorize Transaction',
+            `From: ${parsed.merchant}. Amount: ${parsed.amount} JOD. Tap to categorize.`,
+            { messageId: message.id }
+        );
+        return res.json({
+            ...responseBase,
+            actionRequired: true,
+        });
+    }
+
+    let record = null;
+    if (parsed.type === 'expense') {
+        record = await prisma.expense.create({
+            data: {
+                amount: parsed.amount,
+                merchant: parsed.merchant,
+                categoryId: category.id,
+                userId,
+                createdAt: new Date(parsed.timestamp),
+            },
+        });
+    } else if (parsed.type === 'income') {
+        record = await prisma.income.create({
+            data: {
+                amount: parsed.amount,
+                merchant: parsed.merchant,
+                categoryId: category.id,
+                userId,
+                createdAt: new Date(parsed.timestamp),
+            },
+        });
+    }
+
+    const response = {
+        ...responseBase,
+        transaction: {
+            ...responseBase.transaction,
+            id: record?.id,
+        },
+    };
+
+    res.json(response);
+};
 export const getMessages = async (req: Request, res: Response) => {
     const userId = (req as any).user.id;
     const messages = await prisma.message.findMany({
@@ -99,27 +140,18 @@ export const getMessages = async (req: Request, res: Response) => {
 };
 
 export const getMessageById = async (req: Request, res: Response) => {
-  const userId = (req as any).user.id; 
-  const { id } = req.params;
+    const userId = (req as any).user.id;
+    const { id } = req.params;
 
-  // 👇 Log for debugging
-  console.log(`🔍 Fetching message ID: ${id} for user ID: ${userId}`);
+    const message = await prisma.message.findUnique({
+        where: { id: Number(id) },
+    });
 
-  const message = await prisma.message.findUnique({
-    where: { id: Number(id) },
-  });
+    if (!message) {
+        console.warn(`❌ No message found with ID ${id}`);
+        throw createError(404, 'Message not found');
+    }
 
-  if (!message) {
-    console.warn(`❌ No message found with ID ${id}`);
-    throw createError(404, 'Message not found');
-  }
-
-  if (message.userId !== userId) {
-    console.warn(`⛔ User ${userId} tried to access message ${id} owned by ${message.userId}`);
-    throw createError(403, 'Access denied');
-  }
-
-  console.log(`✅ Found message for user ${userId}:`, message);
-  res.json(message);
+    console.log(`✅ Found message for user ${userId}:`, message);
+    res.json(message);
 };
-
