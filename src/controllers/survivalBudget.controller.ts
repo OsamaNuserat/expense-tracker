@@ -23,11 +23,11 @@ export const createSurvivalBudget = async (req: Request, res: Response) => {
 
     res.status(201).json(budget);
 };
-
 export const getSurvivalBudget = async (req: Request, res: Response) => {
     const userId = (req as any).user.id;
     const now = new Date();
 
+    // Get active budget for current date
     const budget = await prisma.survivalBudget.findFirst({
         where: {
             userId,
@@ -36,41 +36,36 @@ export const getSurvivalBudget = async (req: Request, res: Response) => {
         },
     });
 
-    if (!budget) {
-        throw createError(404, 'No active survival budget found');
-    }
+    if (!budget) return res.status(404).json({ message: 'No active budget' });
 
-    const { startDate, endDate, amount } = budget;
+    // Calculate total weeks properly
+    const start = new Date(budget.startDate);
+    const end = new Date(budget.endDate);
+    const totalDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    const totalWeeks = Math.ceil(totalDays / 7);
+    const weeklyBudget = budget.amount / totalWeeks;
 
-    const totalWeeks = Math.ceil((endDate.getTime() - startDate.getTime()) / (7 * 24 * 60 * 60 * 1000));
-
-    const weeklyBudget = amount / totalWeeks;
-
-    const daysSinceStart = Math.floor((now.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-    const currentWeekIndex = Math.floor(daysSinceStart / 7);
-
-    const weekStart = new Date(startDate);
-    weekStart.setDate(weekStart.getDate() + currentWeekIndex * 7);
+    // Calculate current week boundaries (Sunday to Saturday)
+    const weekStart = new Date(now);
+    weekStart.setDate(now.getDate() - now.getDay()); // Sunday
+    weekStart.setHours(0, 0, 0, 0); // Start of day
 
     const weekEnd = new Date(weekStart);
-    weekEnd.setDate(weekEnd.getDate() + 7);
+    weekEnd.setDate(weekStart.getDate() + 6); // Saturday
+    weekEnd.setHours(23, 59, 59, 999); // End of day
 
-    const weeklyExpenses = await prisma.expense.aggregate({
-        _sum: {
-            amount: true,
-        },
+    // Get expenses for current week
+    const expenses = await prisma.expense.findMany({
         where: {
             userId,
             createdAt: {
                 gte: weekStart,
-                lt: weekEnd,
+                lte: weekEnd,
             },
         },
     });
 
-    const spent = weeklyExpenses._sum?.amount ?? 0;
-
-    const remaining = weeklyBudget - spent;
+    const spent = expenses.reduce((sum, expense) => sum + expense.amount, 0);
 
     res.json({
         budget,
@@ -80,7 +75,29 @@ export const getSurvivalBudget = async (req: Request, res: Response) => {
             start: weekStart,
             end: weekEnd,
             spent,
-            remaining,
+            remaining: weeklyBudget - spent,
         },
     });
 };
+
+export async function updateSurvivalBudget(userId: number, amount: number, expenseDate: Date) {
+    // Find active budget for expense date
+    const budget = await prisma.survivalBudget.findFirst({
+        where: {
+            userId,
+            startDate: { lte: expenseDate },
+            endDate: { gte: expenseDate },
+        },
+    });
+
+    if (!budget) return;
+
+    // Update budget amount
+    await prisma.survivalBudget.update({
+        where: { id: budget.id },
+        data: {
+            amount: budget.amount - amount,
+            updatedAt: new Date(),
+        },
+    });
+}

@@ -4,6 +4,7 @@ import { parseMessage } from '../services/parser';
 import createError from 'http-errors';
 import { sendPushToUser } from '../utils/expoPush';
 import { CategoryType, Prisma } from '@prisma/client';
+import { updateSurvivalBudget } from './survivalBudget.controller';
 
 export const parseSMS = async (req: Request, res: Response) => {
     const userId = (req as any).user.id;
@@ -58,7 +59,6 @@ export const parseSMS = async (req: Request, res: Response) => {
         },
     };
 
-    // Always require action for CliQ messages
     if (parsed.source === 'CliQ') {
         await sendPushToUser(
             userId,
@@ -107,6 +107,8 @@ export const parseSMS = async (req: Request, res: Response) => {
                 createdAt: new Date(parsed.timestamp),
             },
         });
+        
+        await updateSurvivalBudget(userId, parsed.amount, new Date(parsed.timestamp));
     } else if (parsed.type === 'income') {
         record = await prisma.income.create({
             data: {
@@ -129,6 +131,7 @@ export const parseSMS = async (req: Request, res: Response) => {
 
     res.json(response);
 };
+
 export const getMessages = async (req: Request, res: Response) => {
     const userId = (req as any).user.id;
     const messages = await prisma.message.findMany({
