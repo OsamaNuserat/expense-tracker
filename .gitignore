@@ -28,4 +28,5 @@ Thumbs.db
 coverage/
 .idea/
 Expense_Income_Categorization_Roadmap.md
-sendPushTest.js
+expense-tracker-6aec0-firebase-adminsdk-fbsvc-1fb0b2c9f3.json
+google-services.json

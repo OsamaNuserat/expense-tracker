@@ -1,12 +1,13 @@
 import type { Request, Response } from 'express';
 import createError from 'http-errors';
-import { saveExpoToken, sendPushToUser } from '../utils/expoPush';
+import { saveFCMToken, sendPushToUser } from '../utils/fcmPush';
 
 export const saveToken = async (req: Request, res: Response) => {
   const userId = (req as any).user.id;
   const { token } = req.body as { token?: string };
-  if (!token) throw createError(400, 'Expo push token is required');
-  await saveExpoToken(userId, token);
+  if (!token) throw createError(400, 'FCM push token is required');
+  
+  await saveFCMToken(userId, token);
   res.status(200).json({ message: 'Token saved' });
 };
 
@@ -21,5 +22,4 @@ export const sendNotification = async (req: Request, res: Response) => {
   await sendPushToUser(userId, title, body, data);
 
   res.status(200).json({ message: 'Notification sent' });
-}
-
+};
