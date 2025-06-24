@@ -3,58 +3,96 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.parseMessage = parseMessage;
 const time_1 = require("../utils/time");
 const KEYWORD_MAP = {
-    عمولة: 'Bank Fee',
-    رسوم: 'Bank Fee',
+    // Bank fees
+    'عمولة': 'Bank Fee',
+    'رسوم': 'Bank Fee',
     'خدمات مصرفية': 'Bank Fee',
-    سوق: 'Groceries',
-    بقالة: 'Groceries',
-    كهرباء: 'Utilities',
-    مياه: 'Utilities',
-    وقود: 'Transport',
-    بنزين: 'Transport',
-    مطعم: 'Dining',
-    كافيه: 'Dining',
-    'حركة قسط شهري': 'Installment',
-    راتب: 'Salary',
-    ايداع: 'Salary',
-    'حوالة كليك واردة': 'Salary',
+    'اليه': 'Bank Fee',
+    // Shopping
+    'سوق': 'Groceries',
+    'بقالة': 'Groceries',
+    'تسوق': 'Shopping',
+    'TASHKEEL': 'Office Supplies',
+    // Utilities
+    'كهرباء': 'Utilities',
+    'مياه': 'Utilities',
+    // Transportation
+    'وقود': 'Transport',
+    'بنزين': 'Transport',
+    'نقل': 'Transport',
+    'GULF': 'Transport',
+    'ALHARAMAIN': 'Transport',
+    // Food
+    'مطعم': 'Dining',
+    'مطاعم': 'Dining',
+    'كافيه': 'Dining',
+    'طعام': 'Dining',
+    // Payments
+    'قسط': 'Installment',
+    'تسديد': 'Payment',
+    'دفع': 'Payment',
+    // Income
+    'راتب': 'Salary',
+    'ايداع': 'Deposit',
+    'حوالة واردة': 'Transfer',
+    'قيد راتب': 'Salary',
+    'حوالة صادرة': 'Transfer',
 };
+const MERCHANT_CLEANUP = [
+    { pattern: /AMMAN\s*JO$/i, replacement: '' },
+    { pattern: /الاردن$/i, replacement: '' },
+    { pattern: /\b(JOD|دينار)\b/gi, replacement: '' },
+    { pattern: /\s+/g, replacement: ' ' },
+    { pattern: /[^a-zA-Z\u0600-\u06FF\s]/g, replacement: '' },
+];
 function parseMessage(message, timestamp) {
-    const skip = ['تهنئكم', 'عيد', 'كل عام'];
-    if (skip.some((kw) => message.includes(kw)))
+    const skipKeywords = ['تهنئكم', 'عيد', 'كل عام', 'أسرة', 'بخير'];
+    if (skipKeywords.some(kw => message.includes(kw)))
         return null;
-    const isCredit = /حوالة كليك واردة|ايداع|راتب/.test(message);
-    const isDebit = /حوالة كليك صادرة|تفويض حركة|تسديد الكتروني|حركة قسط|قيد مبلغ|خصم|اقتطاع/.test(message);
-    let type = isCredit ? 'income' : isDebit ? 'expense' : 'unknown';
-    const amtRegex = /(?:قيد\s*راتب|قيد مبلغ|بقيمة|بمبلغ)\s*([\d.,]+)\s+دينار/;
+    const isCredit = /حوالة كليك واردة|ايداع|راتب|قيد راتب|حوالة واردة/.test(message);
+    const isDebit = /حوالة كليك صادرة|تفويض حركة|تسديد الكتروني|حركة قسط|قيد مبلغ|خصم|اقتطاع|حوالة صادرة/.test(message);
+    const type = isCredit ? 'income' : isDebit ? 'expense' : 'unknown';
+    const amtRegex = /(?:قيد\s*راتب|قيد مبلغ|بقيمة|بمبلغ|قيمة|مبلغ)\s*([\d.,]+)\s+دينار/;
     const matchAmt = message.match(amtRegex);
     if (!matchAmt)
         return null;
     const amount = parseFloat(matchAmt[1].replace(/,/g, ''));
-    let merchant;
-    const fromMatch = message.match(/من\s+(.+?)\s+(?:AMMAN|الرصيد)/);
-    const toMatch = message.match(/الى\s+(.+?)\s+الرصيد/);
-    if (fromMatch)
+    let merchant = null;
+    const fromMatch = message.match(/(?:من|الى)\s+([^0-9]+?)\s*(?:[\d.,]+\s*دينار|AMMAN|الرصيد|$)/);
+    if (fromMatch) {
         merchant = fromMatch[1].trim();
-    else if (toMatch)
-        merchant = toMatch[1].trim();
-    let keyword;
-    for (const [kw, categoryName] of Object.entries(KEYWORD_MAP)) {
-        if (message.includes(kw)) {
-            keyword = categoryName;
-            break;
+        for (const { pattern, replacement } of MERCHANT_CLEANUP) {
+            merchant = merchant.replace(pattern, replacement);
+        }
+        merchant = merchant.trim();
+    }
+    let category = null;
+    if (merchant) {
+        const merchantKey = merchant.split(/\s+/)[0];
+        if (KEYWORD_MAP[merchantKey]) {
+            category = KEYWORD_MAP[merchantKey];
         }
     }
-    if (!keyword) {
-        keyword = type === 'income' ? 'راتب' : type === 'expense' ? 'Other' : undefined;
+    if (!category) {
+        for (const [kw, cat] of Object.entries(KEYWORD_MAP)) {
+            if (message.includes(kw)) {
+                category = cat;
+                break;
+            }
+        }
     }
-    const source = message.includes('كليك') ? 'CliQ' : undefined;
+    if (!category) {
+        category = type === 'income' ? 'Salary' :
+            type === 'expense' ? 'Other' :
+                'Uncategorized';
+    }
+    const source = /كليك/.test(message) ? 'CliQ' : null;
     return {
         originalMessage: message,
         timestamp: (0, time_1.getISOTimestamp)(timestamp),
         amount,
         merchant,
-        category: keyword,
+        category,
         type,
         source,
     };

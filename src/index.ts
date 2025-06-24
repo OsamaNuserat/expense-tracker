@@ -4,7 +4,6 @@ import authRoutes from './routes/auth.routes';
 import messageRoutes from './routes/message.routes';
 import categoryRoutes from './routes/category.routes';
 import summaryRoutes from './routes/summary.routes';
-import senderRoutes from './routes/sender.routes';
 import notificationsRouter from "./routes/notification.route";
 import survivalBudgetRouter from "./routes/survivalBudget.routes"
 import { authenticate } from './middleware/auth.middleware';
@@ -20,7 +19,6 @@ app.use('/api/messages', authenticate, messageRoutes);
 app.use('/api/categories', authenticate, categoryRoutes);
 app.use('/api/notifications', notificationsRouter);
 app.use('/api/summary', authenticate, summaryRoutes);
-app.use('/api/sender-category', authenticate, senderRoutes);
 app.use('/api/budget/survival', authenticate, survivalBudgetRouter)
 app.use(errorHandler);
 

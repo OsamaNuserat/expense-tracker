@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import prisma from '../prisma/client';
 import { parseMessage } from '../services/parser';
 import createError from 'http-errors';
-import { sendPushToUser } from '../utils/expoPush';
+import { sendPushToUser } from '../utils/fcmPush';
 import { CategoryType, Prisma } from '@prisma/client';
 import { updateSurvivalBudget } from './survivalBudget.controller';
 
@@ -64,7 +64,7 @@ export const parseSMS = async (req: Request, res: Response) => {
             userId,
             'Categorize CliQ Transaction',
             `From: ${parsed.merchant}. Amount: ${parsed.amount} JOD. Tap to categorize.`,
-            { messageId: message.id }
+            { messageId: message.id.toString() }
         );
         return res.json({
             ...responseBase,
@@ -88,7 +88,7 @@ export const parseSMS = async (req: Request, res: Response) => {
             userId,
             'Categorize Transaction',
             `From: ${parsed.merchant}. Amount: ${parsed.amount} JOD. Tap to categorize.`,
-            { messageId: message.id }
+            { messageId: message.id.toString() }
         );
         return res.json({
             ...responseBase,
