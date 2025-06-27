@@ -1,11 +1,14 @@
 import admin from 'firebase-admin';
 import { getMessaging, MulticastMessage, SendResponse } from 'firebase-admin/messaging';
 import prisma from '../prisma/client';
-import * as serviceAccount from '../../expense-tracker-6aec0-firebase-adminsdk-fbsvc-1fb0b2c9f3.json';
 
 if (!admin.apps.length) {
   admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount as admin.ServiceAccount),
+    credential: admin.credential.cert({
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+    }),
   });
 }
 
