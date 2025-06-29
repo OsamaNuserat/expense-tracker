@@ -5,7 +5,9 @@ import messageRoutes from './routes/message.routes';
 import categoryRoutes from './routes/category.routes';
 import summaryRoutes from './routes/summary.routes';
 import notificationsRouter from "./routes/notification.route";
-import survivalBudgetRouter from "./routes/survivalBudget.routes"
+import survivalBudgetRouter from "./routes/survivalBudget.routes";
+import cliqRoutes from './routes/cliq.routes';
+import recurringPaymentRoutes from './routes/recurringPayment.routes';
 import { authenticate } from './middleware/auth.middleware';
 import { errorHandler } from './middleware/errorHandler';
 import { generalRateLimit } from './middleware/rateLimit';
@@ -62,7 +64,9 @@ app.use('/api/messages', authenticate, messageRoutes);
 app.use('/api/categories', authenticate, categoryRoutes);
 app.use('/api/notifications', notificationsRouter);
 app.use('/api/summary', authenticate, summaryRoutes);
-app.use('/api/budget/survival', authenticate, survivalBudgetRouter)
+app.use('/api/budget/survival', authenticate, survivalBudgetRouter);
+app.use('/api/cliq', authenticate, cliqRoutes);
+app.use('/api/recurring-payments', authenticate, recurringPaymentRoutes);
 
 // Error handling
 app.use(errorHandler);

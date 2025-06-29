@@ -11,6 +11,8 @@ const category_routes_1 = __importDefault(require("./routes/category.routes"));
 const summary_routes_1 = __importDefault(require("./routes/summary.routes"));
 const notification_route_1 = __importDefault(require("./routes/notification.route"));
 const survivalBudget_routes_1 = __importDefault(require("./routes/survivalBudget.routes"));
+const cliq_routes_1 = __importDefault(require("./routes/cliq.routes"));
+const recurringPayment_routes_1 = __importDefault(require("./routes/recurringPayment.routes"));
 const auth_middleware_1 = require("./middleware/auth.middleware");
 const errorHandler_1 = require("./middleware/errorHandler");
 const rateLimit_1 = require("./middleware/rateLimit");
@@ -62,6 +64,8 @@ app.use('/api/categories', auth_middleware_1.authenticate, category_routes_1.def
 app.use('/api/notifications', notification_route_1.default);
 app.use('/api/summary', auth_middleware_1.authenticate, summary_routes_1.default);
 app.use('/api/budget/survival', auth_middleware_1.authenticate, survivalBudget_routes_1.default);
+app.use('/api/cliq', auth_middleware_1.authenticate, cliq_routes_1.default);
+app.use('/api/recurring-payments', auth_middleware_1.authenticate, recurringPayment_routes_1.default);
 // Error handling
 app.use(errorHandler_1.errorHandler);
 app.get('/', (_req, res) => res.send('Expense Tracker API'));

@@ -67,6 +67,160 @@ router.post('/parse-sms', asyncHandler(messagesController.parseSMS));
 
 /**
  * @swagger
+ * /messages/parse:
+ *   post:
+ *     summary: Parse SMS message (alternative endpoint)
+ *     description: Alternative endpoint for parsing SMS messages
+ *     tags: [Messages]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - content
+ *             properties:
+ *               content:
+ *                 type: string
+ *                 example: "CLIQ: You received 100.00 JOD from Ahmad Ali at 2025-06-29 14:30"
+ *               timestamp:
+ *                 type: string
+ *                 format: date-time
+ *                 example: "2025-06-29T14:30:00Z"
+ *     responses:
+ *       200:
+ *         description: Message parsed successfully
+ */
+router.post('/parse', asyncHandler(messagesController.parseSMS));
+
+/**
+ * @swagger
+ * /messages/categorize:
+ *   post:
+ *     summary: Categorize a transaction
+ *     description: Handles user categorization decision for CLIQ and manual categorization
+ *     tags: [Messages]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - messageId
+ *               - categoryId
+ *             properties:
+ *               messageId:
+ *                 type: integer
+ *                 example: 123
+ *               categoryId:
+ *                 type: integer
+ *                 example: 5
+ *               wasCorrection:
+ *                 type: boolean
+ *                 default: false
+ *                 description: True if user is correcting an auto-categorization
+ *     responses:
+ *       200:
+ *         description: Transaction categorized successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 transaction:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                     type:
+ *                       type: string
+ *                       enum: [income, expense]
+ *                     amount:
+ *                       type: number
+ *                     merchant:
+ *                       type: string
+ *                     categoryId:
+ *                       type: integer
+ *                     categoryName:
+ *                       type: string
+ *                     timestamp:
+ *                       type: string
+ *                 learned:
+ *                   type: boolean
+ *                   description: Whether the system learned from this categorization
+ *       400:
+ *         description: Invalid request data
+ *       404:
+ *         description: Message or category not found
+ */
+router.post('/categorize', asyncHandler(messagesController.categorizeTransaction));
+
+/**
+ * @swagger
+ * /messages/{messageId}/suggestions:
+ *   get:
+ *     summary: Get category suggestions
+ *     description: Get smart categorization suggestions for a specific message
+ *     tags: [Messages]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: messageId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The message ID to get suggestions for
+ *     responses:
+ *       200:
+ *         description: Category suggestions retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 categoryId:
+ *                   type: integer
+ *                   nullable: true
+ *                 categoryName:
+ *                   type: string
+ *                   nullable: true
+ *                 confidence:
+ *                   type: number
+ *                   minimum: 0
+ *                   maximum: 1
+ *                 reason:
+ *                   type: string
+ *                 suggestions:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       categoryId:
+ *                         type: integer
+ *                       categoryName:
+ *                         type: string
+ *                       confidence:
+ *                         type: number
+ *                       reason:
+ *                         type: string
+ *       400:
+ *         description: Message has no parsed data
+ *       404:
+ *         description: Message not found
+ */
+router.get('/:messageId/suggestions', asyncHandler(messagesController.getCategorySuggestions));
+
+/**
+ * @swagger
  * /messages:
  *   get:
  *     summary: Get messages
