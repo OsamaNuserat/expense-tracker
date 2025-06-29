@@ -12,12 +12,18 @@ model User {
   id               Int              @id @default(autoincrement())
   email            String           @unique
   password         String
+  emailVerified    Boolean          @default(false)
+  lastLoginAt      DateTime?
+  failedLoginAttempts Int           @default(0)
+  lockedUntil      DateTime?
   createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
   messages         Message[]
   expenses         Expense[]
   incomes          Income[]
   categories       Category[]
   pushTokens       PushToken[]
+  refreshTokens    RefreshToken[]
   survivalBudgets  SurvivalBudget[]   
 }
 
@@ -90,4 +96,16 @@ model SurvivalBudget {
   updatedAt    DateTime  @updatedAt
 
   @@unique([userId, startDate])
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  
+  @@index([userId])
+  @@index([expiresAt])
 }
