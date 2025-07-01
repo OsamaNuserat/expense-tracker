@@ -23,7 +23,14 @@ app.use(cors({
   credentials: true
 }));
 app.use(express.json({ limit: '10mb' }));
-app.use(generalRateLimit);
+
+// Apply rate limiting only in production
+if (process.env.NODE_ENV === 'production') {
+  app.use(generalRateLimit);
+  console.log('📊 Rate limiting enabled (production mode)');
+} else {
+  console.log('🚀 Rate limiting disabled (development mode)');
+}
 
 // Setup Swagger documentation
 setupSwagger(app);

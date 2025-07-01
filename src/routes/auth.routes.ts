@@ -6,8 +6,10 @@ import { authRateLimit } from '../middleware/rateLimit';
 
 const router = Router();
 
-// Apply rate limiting to auth endpoints
-router.use(authRateLimit);
+// Apply rate limiting to auth endpoints only in production
+if (process.env.NODE_ENV === 'production') {
+  router.use(authRateLimit);
+}
 
 /**
  * @swagger
