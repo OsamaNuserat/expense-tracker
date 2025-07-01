@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import prisma from '../prisma/client';
 import { smartCategorizationService } from '../services/smartCategorization';
 import createError from 'http-errors';
-import { sendPushToUser } from '../utils/fcmPush';
+import { sendPushToUser } from '../utils/expoPush';
 
 export interface CliqWorkflowData {
   messageId: number;

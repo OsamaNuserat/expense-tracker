@@ -255,3 +255,10 @@ export async function sendBudgetAlert(
     channelId: 'budgets'
   });
 }
+
+// Legacy function names for backwards compatibility
+export const saveFCMToken = saveExpoPushToken;
+export const getUserTokens = async (userId: number): Promise<string[]> => {
+  const token = await getUserExpoPushToken(userId);
+  return token ? [token] : [];
+};

@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import prisma from '../prisma/client';
 import { parseMessage } from '../services/parser';
 import createError from 'http-errors';
-import { sendPushToUser } from '../utils/fcmPush';
+import { sendPushToUser } from '../utils/expoPush';
 import { CategoryType, Prisma } from '@prisma/client';
 import { updateSurvivalBudget } from './survivalBudget.controller';
 import { smartCategorizationService } from '../services/smartCategorization';
