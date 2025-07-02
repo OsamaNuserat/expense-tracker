@@ -32,6 +32,7 @@ model User {
   categoryPatterns          CategoryPattern[]
   cliqPatterns              CliqPattern[]
   recurringPayments         RecurringPayment[]
+  financialGoals            FinancialGoal[]
 }
 
 model Message {
@@ -58,6 +59,7 @@ model Category {
   categoryPatterns          CategoryPattern[]
   cliqPatterns              CliqPattern[]
   recurringPayments         RecurringPayment[]
+  financialGoals            FinancialGoal[]
 
   @@unique([userId, name], name: "userId_name")
 }
@@ -68,25 +70,27 @@ enum CategoryType {
 }
 
 model Expense {
-  id         Int        @id @default(autoincrement())
-  amount     Float
-  category   Category   @relation(fields: [categoryId], references: [id])
-  categoryId Int
-  user       User       @relation(fields: [userId], references: [id])
-  userId     Int
-  merchant   String?    // Added to store merchant info
-  createdAt  DateTime   @default(now())
+  id           Int               @id @default(autoincrement())
+  amount       Float
+  category     Category          @relation(fields: [categoryId], references: [id])
+  categoryId   Int
+  user         User              @relation(fields: [userId], references: [id])
+  userId       Int
+  merchant     String?           // Added to store merchant info
+  goalTransactions GoalTransaction[]
+  createdAt    DateTime          @default(now())
 }
 
 model Income {
-  id         Int        @id @default(autoincrement())
-  amount     Float
-  category   Category   @relation(fields: [categoryId], references: [id])
-  categoryId Int
-  user       User       @relation(fields: [userId], references: [id])
-  userId     Int
-  merchant   String?    // Added to store merchant info
-  createdAt  DateTime   @default(now())
+  id           Int               @id @default(autoincrement())
+  amount       Float
+  category     Category          @relation(fields: [categoryId], references: [id])
+  categoryId   Int
+  user         User              @relation(fields: [userId], references: [id])
+  userId       Int
+  merchant     String?           // Added to store merchant info
+  goalTransactions GoalTransaction[]
+  createdAt    DateTime          @default(now())
 }
 
 model SurvivalBudget {
@@ -234,4 +238,97 @@ enum RecurringFrequency {
   MONTHLY
   QUARTERLY
   YEARLY
+}
+
+model FinancialGoal {
+  id              Int               @id @default(autoincrement())
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId          Int
+  title           String
+  description     String?
+  goalType        GoalType
+  targetAmount    Float
+  currentAmount   Float             @default(0.0)
+  targetDate      DateTime?
+  priority        GoalPriority      @default(MEDIUM)
+  isActive        Boolean           @default(true)
+  isCompleted     Boolean           @default(false)
+  completedAt     DateTime?
+  category        Category?         @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  categoryId      Int?
+  autoContribute  Boolean           @default(false)
+  monthlyTarget   Float?
+  reminderEnabled Boolean           @default(true)
+  reminderDay     Int?              // Day of month for reminders (1-31)
+  metadata        Json?             // Store additional goal-specific data
+  transactions    GoalTransaction[]
+  milestones      GoalMilestone[]
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@index([userId, isActive])
+  @@index([userId, goalType])
+  @@index([targetDate])
+}
+
+model GoalTransaction {
+  id              Int             @id @default(autoincrement())
+  goal            FinancialGoal   @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  goalId          Int
+  amount          Float
+  type            TransactionType
+  description     String?
+  source          String?         // Where the money came from/went to
+  linkedExpense   Expense?        @relation(fields: [linkedExpenseId], references: [id])
+  linkedExpenseId Int?
+  linkedIncome    Income?         @relation(fields: [linkedIncomeId], references: [id])
+  linkedIncomeId  Int?
+  createdAt       DateTime        @default(now())
+
+  @@index([goalId])
+  @@index([createdAt])
+}
+
+model GoalMilestone {
+  id           Int           @id @default(autoincrement())
+  goal         FinancialGoal @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  goalId       Int
+  title        String
+  description  String?
+  targetAmount Float
+  isReached    Boolean       @default(false)
+  reachedAt    DateTime?
+  rewardText   String?       // What reward user gets for reaching this milestone
+  createdAt    DateTime      @default(now())
+
+  @@index([goalId, targetAmount])
+}
+
+enum GoalType {
+  EMERGENCY_FUND
+  VACATION
+  CAR_PURCHASE
+  HOUSE_DOWN_PAYMENT
+  DEBT_PAYOFF
+  WEDDING
+  EDUCATION
+  RETIREMENT
+  INVESTMENT
+  HOME_IMPROVEMENT
+  BUSINESS
+  GADGET
+  CUSTOM
+}
+
+enum GoalPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum TransactionType {
+  CONTRIBUTION
+  WITHDRAWAL
+  ADJUSTMENT
 }

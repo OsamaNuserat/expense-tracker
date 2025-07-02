@@ -13,6 +13,8 @@ const notification_route_1 = __importDefault(require("./routes/notification.rout
 const survivalBudget_routes_1 = __importDefault(require("./routes/survivalBudget.routes"));
 const cliq_routes_1 = __importDefault(require("./routes/cliq.routes"));
 const recurringPayment_routes_1 = __importDefault(require("./routes/recurringPayment.routes"));
+const advisor_routes_1 = __importDefault(require("./routes/advisor.routes"));
+const financialGoals_routes_1 = __importDefault(require("./routes/financialGoals.routes"));
 const auth_middleware_1 = require("./middleware/auth.middleware");
 const errorHandler_1 = require("./middleware/errorHandler");
 const rateLimit_1 = require("./middleware/rateLimit");
@@ -26,7 +28,14 @@ app.use((0, cors_1.default)({
     credentials: true
 }));
 app.use(express_1.default.json({ limit: '10mb' }));
-app.use(rateLimit_1.generalRateLimit);
+// Apply rate limiting only in production
+if (process.env.NODE_ENV === 'production') {
+    app.use(rateLimit_1.generalRateLimit);
+    console.log('📊 Rate limiting enabled (production mode)');
+}
+else {
+    console.log('🚀 Rate limiting disabled (development mode)');
+}
 // Setup Swagger documentation
 (0, swagger_1.setupSwagger)(app);
 // Setup Postman collection export
@@ -66,6 +75,8 @@ app.use('/api/summary', auth_middleware_1.authenticate, summary_routes_1.default
 app.use('/api/budget/survival', auth_middleware_1.authenticate, survivalBudget_routes_1.default);
 app.use('/api/cliq', auth_middleware_1.authenticate, cliq_routes_1.default);
 app.use('/api/recurring-payments', auth_middleware_1.authenticate, recurringPayment_routes_1.default);
+app.use('/api/advisor', auth_middleware_1.authenticate, advisor_routes_1.default);
+app.use('/api/financial-goals', financialGoals_routes_1.default);
 // Error handling
 app.use(errorHandler_1.errorHandler);
 app.get('/', (_req, res) => res.send('Expense Tracker API'));

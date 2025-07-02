@@ -39,8 +39,10 @@ const asyncHandler_1 = require("../utils/asyncHandler");
 const auth_middleware_1 = require("../middleware/auth.middleware");
 const rateLimit_1 = require("../middleware/rateLimit");
 const router = (0, express_1.Router)();
-// Apply rate limiting to auth endpoints
-router.use(rateLimit_1.authRateLimit);
+// Apply rate limiting to auth endpoints only in production
+if (process.env.NODE_ENV === 'production') {
+    router.use(rateLimit_1.authRateLimit);
+}
 /**
  * @swagger
  * /auth/register:
