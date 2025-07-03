@@ -192,31 +192,32 @@ export async function processPendingBillReminders(): Promise<{ sent: number; fai
   let sent = 0;
   let failed = 0;
 
-  // Get all pending reminders that are due
-  const pendingReminders = await prisma.billReminder.findMany({
-    where: {
-      isSent: false,
-      reminderDate: {
-        lte: now
-      }
-    },
-    include: {
-      bill: {
-        include: {
-          user: {
-            select: {
-              id: true,
-              notificationSettings: true,
-              expoPushToken: true
+  try {
+    // Get all pending reminders that are due
+    const pendingReminders = await prisma.billReminder.findMany({
+      where: {
+        isSent: false,
+        reminderDate: {
+          lte: now
+        }
+      },
+      include: {
+        bill: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                notificationSettings: true,
+                expoPushToken: true
+              }
             }
           }
         }
+      },
+      orderBy: {
+        reminderDate: 'asc'
       }
-    },
-    orderBy: {
-      reminderDate: 'asc'
-    }
-  });
+    });
 
   for (const reminder of pendingReminders) {
     try {
@@ -260,6 +261,18 @@ export async function processPendingBillReminders(): Promise<{ sent: number; fai
   }
 
   return { sent, failed };
+  } catch (error: any) {
+    console.error('Error processing bill reminders:', error);
+    
+    // If the table doesn't exist (P2021), return gracefully
+    if (error.code === 'P2021' && error.meta?.table === 'public.BillReminder') {
+      console.log('BillReminder table does not exist yet. Skipping bill reminders processing.');
+      return { sent: 0, failed: 0 };
+    }
+    
+    // Re-throw other errors
+    throw error;
+  }
 }
 
 /**
@@ -270,25 +283,26 @@ export async function checkOverdueBills(): Promise<{ updated: number; alertsSent
   let updated = 0;
   let alertsSent = 0;
 
-  // Find bills that should be marked as overdue
-  const overdueBills = await prisma.bill.findMany({
-    where: {
-      isActive: true,
-      nextDueDate: {
-        lt: now
+  try {
+    // Find bills that should be marked as overdue
+    const overdueBills = await prisma.bill.findMany({
+      where: {
+        isActive: true,
+        nextDueDate: {
+          lt: now
+        },
+        isOverdue: false // Not already marked as overdue
       },
-      isOverdue: false // Not already marked as overdue
-    },
-    include: {
-      user: {
-        select: {
-          id: true,
-          notificationSettings: true,
-          expoPushToken: true
+      include: {
+        user: {
+          select: {
+            id: true,
+            notificationSettings: true,
+            expoPushToken: true
+          }
         }
       }
-    }
-  });
+    });
 
   for (const bill of overdueBills) {
     try {
@@ -323,6 +337,18 @@ export async function checkOverdueBills(): Promise<{ updated: number; alertsSent
   }
 
   return { updated, alertsSent };
+  } catch (error: any) {
+    console.error('Error checking overdue bills:', error);
+    
+    // If the table doesn't exist (P2021), return gracefully
+    if (error.code === 'P2021' && (error.meta?.table === 'public.Bill' || error.meta?.table === 'public.BillReminder')) {
+      console.log('Bill tables do not exist yet. Skipping overdue bills check.');
+      return { updated: 0, alertsSent: 0 };
+    }
+    
+    // Re-throw other errors
+    throw error;
+  }
 }
 
 /**
