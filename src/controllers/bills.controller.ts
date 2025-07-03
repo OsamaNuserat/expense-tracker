@@ -19,21 +19,33 @@ import {
 /**
  * Helper function to validate and parse bill ID
  */
-const validateBillId = (id: string): number => {
+const validateBillId = (id: string | undefined): number => {
   if (!id) {
     throw createError(400, 'Bill ID is required');
   }
+
+  // Trim whitespace
+  const trimmedId = id.trim();
   
-  // Additional check for common problematic values
-  if (id === 'undefined' || id === 'null' || id === '') {
-    throw createError(400, 'Invalid bill ID: received invalid value');
+  if (trimmedId === '') {
+    throw createError(400, 'Bill ID cannot be empty');
+  }
+
+  // Check for non-numeric characters (except for valid number formats)
+  if (!/^\d+$/.test(trimmedId)) {
+    throw createError(400, `Invalid bill ID format: "${trimmedId}". Must be a positive integer.`);
+  }
+
+  const billId = parseInt(trimmedId, 10);
+  
+  if (isNaN(billId)) {
+    throw createError(400, `Invalid bill ID: "${trimmedId}". Could not parse as number.`);
   }
   
-  const billId = parseInt(id);
-  if (isNaN(billId) || billId <= 0) {
-    throw createError(400, `Invalid bill ID format. Must be a positive number, received: "${id}"`);
+  if (billId <= 0) {
+    throw createError(400, `Invalid bill ID: ${billId}. Must be a positive number greater than 0.`);
   }
-  
+
   return billId;
 };
 
@@ -274,7 +286,7 @@ export const updateBill = async (req: Request, res: Response) => {
   }
 
   const bill = await prisma.bill.update({
-    where: { id: billId },
+    where: { id: parseInt(id) },
     data: {
       ...updateData,
       nextDueDate,

@@ -246,177 +246,6 @@ router.get('/overdue', authenticate, asyncHandler(getOverdueBills));
 
 /**
  * @swagger
- * /api/bills/dashboard:
- *   get:
- *     summary: Get bills dashboard summary
- *     tags: [Bills]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Dashboard summary data
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 totalBills:
- *                   type: integer
- *                 activeBills:
- *                   type: integer
- *                 overdueBills:
- *                   type: object
- *                   properties:
- *                     count:
- *                       type: integer
- *                     totalAmount:
- *                       type: number
- *                     bills:
- *                       type: array
- *                 dueThisWeek:
- *                   type: object
- *                   properties:
- *                     count:
- *                       type: integer
- *                     totalAmount:
- *                       type: number
- *                     bills:
- *                       type: array
- *                 totalPaidThisMonth:
- *                   type: number
- *                 averageMonthlyAmount:
- *                   type: number
- */
-router.get('/dashboard', authenticate, asyncHandler(getBillsDashboard));
-
-/**
- * @swagger
- * /api/bills/calendar:
- *   get:
- *     summary: Get bills in calendar format
- *     tags: [Bills]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: query
- *         name: startDate
- *         required: true
- *         schema:
- *           type: string
- *           format: date
- *         description: Start date for calendar view
- *       - in: query
- *         name: endDate
- *         required: true
- *         schema:
- *           type: string
- *           format: date
- *         description: End date for calendar view
- *       - in: query
- *         name: view
- *         schema:
- *           type: string
- *           enum: [month, week, day]
- *           default: month
- *         description: Calendar view type
- *     responses:
- *       200:
- *         description: Calendar events data
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 events:
- *                   type: array
- *                   items:
- *                     type: object
- *                     properties:
- *                       id:
- *                         type: integer
- *                       title:
- *                         type: string
- *                       start:
- *                         type: string
- *                         format: date-time
- *                       end:
- *                         type: string
- *                         format: date-time
- *                       description:
- *                         type: string
- *                       backgroundColor:
- *                         type: string
- *                       extendedProps:
- *                         type: object
- *                 totalBills:
- *                   type: integer
- *                 overdueBills:
- *                   type: integer
- *                 upcomingBills:
- *                   type: integer
- */
-router.get('/calendar', authenticate, asyncHandler(getBillsCalendar));
-
-/**
- * @swagger
- * /api/bills/export/calendar:
- *   get:
- *     summary: Export bills to iCal format
- *     tags: [Bills]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: query
- *         name: months
- *         schema:
- *           type: integer
- *           default: 12
- *         description: Number of months to include
- *       - in: query
- *         name: includeOverdue
- *         schema:
- *           type: boolean
- *           default: false
- *         description: Include overdue bills
- *     responses:
- *       200:
- *         description: iCal file download
- *         content:
- *           text/calendar:
- *             schema:
- *               type: string
- *               format: binary
- */
-router.get('/export/calendar', authenticate, asyncHandler(exportBillsToCalendar));
-
-/**
- * @swagger
- * /api/bills/{id}:
- *   get:
- *     summary: Get a specific bill
- *     tags: [Bills]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *     responses:
- *       200:
- *         description: Bill details
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Bill'
- *       404:
- *         description: Bill not found
- */
-router.get('/:id', authenticate, asyncHandler(getBillById));
-
-/**
- * @swagger
  * /api/bills:
  *   post:
  *     summary: Create a new bill
@@ -636,6 +465,206 @@ router.post('/:id/pay', authenticate, asyncHandler(markBillAsPaid));
 
 /**
  * @swagger
+ * /api/bills/{id}/remind:
+ *   post:
+ *     summary: Send manual reminder for a bill
+ *     tags: [Bills]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Reminder sent
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ */
+router.post('/:id/remind', authenticate, asyncHandler(sendManualReminder));
+
+/**
+ * @swagger
+ * /api/bills/dashboard:
+ *   get:
+ *     summary: Get bills dashboard summary
+ *     tags: [Bills]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Dashboard summary data
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 totalBills:
+ *                   type: integer
+ *                 activeBills:
+ *                   type: integer
+ *                 overdueBills:
+ *                   type: object
+ *                   properties:
+ *                     count:
+ *                       type: integer
+ *                     totalAmount:
+ *                       type: number
+ *                     bills:
+ *                       type: array
+ *                 dueThisWeek:
+ *                   type: object
+ *                   properties:
+ *                     count:
+ *                       type: integer
+ *                     totalAmount:
+ *                       type: number
+ *                     bills:
+ *                       type: array
+ *                 totalPaidThisMonth:
+ *                   type: number
+ *                 averageMonthlyAmount:
+ *                   type: number
+ */
+router.get('/dashboard', authenticate, asyncHandler(getBillsDashboard));
+
+/**
+ * @swagger
+ * /api/bills/calendar:
+ *   get:
+ *     summary: Get bills in calendar format
+ *     tags: [Bills]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: startDate
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Start date for calendar view
+ *       - in: query
+ *         name: endDate
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: End date for calendar view
+ *       - in: query
+ *         name: view
+ *         schema:
+ *           type: string
+ *           enum: [month, week, day]
+ *           default: month
+ *         description: Calendar view type
+ *     responses:
+ *       200:
+ *         description: Calendar events data
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 events:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                       title:
+ *                         type: string
+ *                       start:
+ *                         type: string
+ *                         format: date-time
+ *                       end:
+ *                         type: string
+ *                         format: date-time
+ *                       description:
+ *                         type: string
+ *                       backgroundColor:
+ *                         type: string
+ *                       extendedProps:
+ *                         type: object
+ *                 totalBills:
+ *                   type: integer
+ *                 overdueBills:
+ *                   type: integer
+ *                 upcomingBills:
+ *                   type: integer
+ */
+router.get('/calendar', authenticate, asyncHandler(getBillsCalendar));
+
+/**
+ * @swagger
+ * /api/bills/export/calendar:
+ *   get:
+ *     summary: Export bills to iCal format
+ *     tags: [Bills]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: months
+ *         schema:
+ *           type: integer
+ *           default: 12
+ *         description: Number of months to include
+ *       - in: query
+ *         name: includeOverdue
+ *         schema:
+ *           type: boolean
+ *           default: false
+ *         description: Include overdue bills
+ *     responses:
+ *       200:
+ *         description: iCal file download
+ *         content:
+ *           text/calendar:
+ *             schema:
+ *               type: string
+ *               format: binary
+ */
+router.get('/export/calendar', authenticate, asyncHandler(exportBillsToCalendar));
+
+/**
+ * @swagger
+ * /api/bills/{id}:
+ *   get:
+ *     summary: Get a specific bill
+ *     tags: [Bills]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Bill details
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Bill'
+ *       404:
+ *         description: Bill not found
+ */
+router.get('/:id', authenticate, asyncHandler(getBillById));
+
+/**
+ * @swagger
  * /api/bills/{id}/payments:
  *   get:
  *     summary: Get payment history for a bill
@@ -683,34 +712,5 @@ router.post('/:id/pay', authenticate, asyncHandler(markBillAsPaid));
  *                       type: boolean
  */
 router.get('/:id/payments', authenticate, asyncHandler(getBillPayments));
-
-/**
- * @swagger
- * /api/bills/{id}/remind:
- *   post:
- *     summary: Send manual reminder for a bill
- *     tags: [Bills]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *     responses:
- *       200:
- *         description: Reminder sent
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 message:
- *                   type: string
- */
-router.post('/:id/remind', authenticate, asyncHandler(sendManualReminder));
 
 export default router;
