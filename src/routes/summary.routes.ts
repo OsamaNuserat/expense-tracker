@@ -6,10 +6,10 @@ const router = Router();
 
 /**
  * @swagger
- * /summary/expenses:
+ * /api/summary/expenses:
  *   get:
- *     summary: Get expense summary
- *     description: Retrieves expense analytics for a specified period
+ *     summary: Get expense summary analytics
+ *     description: Retrieves expense analytics and summary data for a specified period
  *     tags: [Summary]
  *     security:
  *       - bearerAuth: []
@@ -84,10 +84,10 @@ router.get('/expenses', asyncHandler(summaryController.getExpenseSummary));
 
 /**
  * @swagger
- * /summary/incomes:
+ * /api/summary/incomes:
  *   get:
- *     summary: Get income summary
- *     description: Retrieves income analytics for a specified period
+ *     summary: Get income summary analytics
+ *     description: Retrieves income analytics and summary data for a specified period
  *     tags: [Summary]
  *     security:
  *       - bearerAuth: []
@@ -157,10 +157,10 @@ router.get('/incomes', asyncHandler(summaryController.getIncomeSummary));
 
 /**
  * @swagger
- * /summary/expenses/by-category:
+ * /api/summary/expenses/by-category:
  *   get:
- *     summary: Get expenses by category
- *     description: Retrieves expense breakdown by category
+ *     summary: Get expense breakdown by category
+ *     description: Retrieves expense analytics grouped by category
  *     tags: [Summary]
  *     security:
  *       - bearerAuth: []
@@ -231,10 +231,10 @@ router.get('/expenses/by-category', asyncHandler(summaryController.getExpensesBy
 
 /**
  * @swagger
- * /summary/incomes/by-category:
+ * /api/summary/incomes/by-category:
  *   get:
- *     summary: Get incomes by category
- *     description: Retrieves income breakdown by category
+ *     summary: Get income breakdown by category  
+ *     description: Retrieves income analytics grouped by category
  *     tags: [Summary]
  *     security:
  *       - bearerAuth: []

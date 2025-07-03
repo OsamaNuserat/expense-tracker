@@ -9,6 +9,8 @@ const auth_routes_1 = __importDefault(require("./routes/auth.routes"));
 const message_routes_1 = __importDefault(require("./routes/message.routes"));
 const category_routes_1 = __importDefault(require("./routes/category.routes"));
 const summary_routes_1 = __importDefault(require("./routes/summary.routes"));
+const expense_routes_1 = __importDefault(require("./routes/expense.routes"));
+const income_routes_1 = __importDefault(require("./routes/income.routes"));
 const notification_route_1 = __importDefault(require("./routes/notification.route"));
 const survivalBudget_routes_1 = __importDefault(require("./routes/survivalBudget.routes"));
 const cliq_routes_1 = __importDefault(require("./routes/cliq.routes"));
@@ -74,6 +76,8 @@ app.use('/api/messages', auth_middleware_1.authenticate, message_routes_1.defaul
 app.use('/api/categories', auth_middleware_1.authenticate, category_routes_1.default);
 app.use('/api/notifications', notification_route_1.default);
 app.use('/api/summary', auth_middleware_1.authenticate, summary_routes_1.default);
+app.use('/api/expenses', auth_middleware_1.authenticate, expense_routes_1.default);
+app.use('/api/incomes', auth_middleware_1.authenticate, income_routes_1.default);
 app.use('/api/budget/survival', auth_middleware_1.authenticate, survivalBudget_routes_1.default);
 app.use('/api/cliq', auth_middleware_1.authenticate, cliq_routes_1.default);
 app.use('/api/recurring-payments', auth_middleware_1.authenticate, recurringPayment_routes_1.default);
