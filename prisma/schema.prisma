@@ -9,57 +9,59 @@ datasource db {
 }
 
 model User {
-  id                        Int              @id @default(autoincrement())
-  email                     String           @unique
-  password                  String
-  name                      String?
-  emailVerified             Boolean          @default(false)
-  lastLoginAt               DateTime?
-  failedLoginAttempts       Int              @default(0)
-  lockedUntil               DateTime?
-  expoPushToken             String?          // Expo push token for notifications
-  notificationSettings      Json?            @default("{\"enabled\": true, \"budgetAlerts\": true, \"transactionAlerts\": true, \"recurringPaymentReminders\": true}")
-  createdAt                 DateTime         @default(now())
-  updatedAt                 DateTime         @updatedAt
-  messages                  Message[]
-  expenses                  Expense[]
-  incomes                   Income[]
-  categories                Category[]
-  refreshTokens             RefreshToken[]
-  survivalBudgets           SurvivalBudget[]
-  categorizationHistory     UserCategorizationHistory[]
-  merchantLearning          MerchantLearning[]
-  categoryPatterns          CategoryPattern[]
-  cliqPatterns              CliqPattern[]
-  recurringPayments         RecurringPayment[]
-  financialGoals            FinancialGoal[]
+  id                    Int                         @id @default(autoincrement())
+  email                 String                      @unique
+  password              String
+  name                  String?
+  emailVerified         Boolean                     @default(false)
+  lastLoginAt           DateTime?
+  failedLoginAttempts   Int                         @default(0)
+  lockedUntil           DateTime?
+  expoPushToken         String? // Expo push token for notifications
+  notificationSettings  Json?                       @default("{\"enabled\": true, \"budgetAlerts\": true, \"transactionAlerts\": true, \"recurringPaymentReminders\": true}")
+  createdAt             DateTime                    @default(now())
+  updatedAt             DateTime                    @updatedAt
+  messages              Message[]
+  expenses              Expense[]
+  incomes               Income[]
+  categories            Category[]
+  refreshTokens         RefreshToken[]
+  survivalBudgets       SurvivalBudget[]
+  categorizationHistory UserCategorizationHistory[]
+  merchantLearning      MerchantLearning[]
+  categoryPatterns      CategoryPattern[]
+  cliqPatterns          CliqPattern[]
+  recurringPayments     RecurringPayment[]
+  financialGoals        FinancialGoal[]
+  bills                 Bill[]
 }
 
 model Message {
-  id             Int      @id @default(autoincrement())
-  content        String
-  user           User     @relation(fields: [userId], references: [id])
-  userId         Int
-  createdAt      DateTime @default(now())
-  parsedData     Json?    // Added to store parsed message data
+  id         Int      @id @default(autoincrement())
+  content    String
+  user       User     @relation(fields: [userId], references: [id])
+  userId     Int
+  createdAt  DateTime @default(now())
+  parsedData Json? // Added to store parsed message data
 }
 
 model Category {
-  id                        Int              @id @default(autoincrement())
-  user                      User             @relation(fields: [userId], references: [id])
-  userId                    Int
-  name                      String
-  keywords                  String?
-  type                      CategoryType
-  createdAt                 DateTime         @default(now())
-  expenses                  Expense[]
-  incomes                   Income[]
-  categorizationHistory     UserCategorizationHistory[]
-  merchantLearning          MerchantLearning[]
-  categoryPatterns          CategoryPattern[]
-  cliqPatterns              CliqPattern[]
-  recurringPayments         RecurringPayment[]
-  financialGoals            FinancialGoal[]
+  id                    Int                         @id @default(autoincrement())
+  user                  User                        @relation(fields: [userId], references: [id])
+  userId                Int
+  name                  String
+  keywords              String?
+  type                  CategoryType
+  createdAt             DateTime                    @default(now())
+  expenses              Expense[]
+  incomes               Income[]
+  categorizationHistory UserCategorizationHistory[]
+  merchantLearning      MerchantLearning[]
+  categoryPatterns      CategoryPattern[]
+  cliqPatterns          CliqPattern[]
+  recurringPayments     RecurringPayment[]
+  financialGoals        FinancialGoal[]
+  bills                 Bill[]
 
   @@unique([userId, name], name: "userId_name")
 }
@@ -70,38 +72,38 @@ enum CategoryType {
 }
 
 model Expense {
-  id           Int               @id @default(autoincrement())
-  amount       Float
-  category     Category          @relation(fields: [categoryId], references: [id])
-  categoryId   Int
-  user         User              @relation(fields: [userId], references: [id])
-  userId       Int
-  merchant     String?           // Added to store merchant info
+  id               Int               @id @default(autoincrement())
+  amount           Float
+  category         Category          @relation(fields: [categoryId], references: [id])
+  categoryId       Int
+  user             User              @relation(fields: [userId], references: [id])
+  userId           Int
+  merchant         String? // Added to store merchant info
   goalTransactions GoalTransaction[]
-  createdAt    DateTime          @default(now())
+  createdAt        DateTime          @default(now())
 }
 
 model Income {
-  id           Int               @id @default(autoincrement())
-  amount       Float
-  category     Category          @relation(fields: [categoryId], references: [id])
-  categoryId   Int
-  user         User              @relation(fields: [userId], references: [id])
-  userId       Int
-  merchant     String?           // Added to store merchant info
+  id               Int               @id @default(autoincrement())
+  amount           Float
+  category         Category          @relation(fields: [categoryId], references: [id])
+  categoryId       Int
+  user             User              @relation(fields: [userId], references: [id])
+  userId           Int
+  merchant         String? // Added to store merchant info
   goalTransactions GoalTransaction[]
-  createdAt    DateTime          @default(now())
+  createdAt        DateTime          @default(now())
 }
 
 model SurvivalBudget {
-  id           Int       @id @default(autoincrement())
-  user         User      @relation(fields: [userId], references: [id])
-  userId       Int
-  amount       Float
-  startDate    DateTime
-  endDate      DateTime
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  id        Int      @id @default(autoincrement())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
+  amount    Float
+  startDate DateTime
+  endDate   DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([userId, startDate])
 }
@@ -113,7 +115,7 @@ model RefreshToken {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   expiresAt DateTime
   createdAt DateTime @default(now())
-  
+
   @@index([userId])
   @@index([expiresAt])
 }
@@ -127,107 +129,107 @@ model UserCategorizationHistory {
   amount      Float
   categoryId  Int
   category    Category @relation(fields: [categoryId], references: [id])
-  messageType String   // 'cliq_incoming', 'cliq_outgoing', 'bank_debit', 'bank_credit'
-  confidence  Float    // The confidence score when this was categorized
+  messageType String // 'cliq_incoming', 'cliq_outgoing', 'bank_debit', 'bank_credit'
+  confidence  Float // The confidence score when this was categorized
   wasCorrect  Boolean  @default(true) // If user corrected it, mark as false
   timestamp   DateTime
   createdAt   DateTime @default(now())
-  
+
   @@index([userId, merchant])
   @@index([userId, categoryId])
   @@index([messageType])
 }
 
 model MerchantLearning {
-  id               Int      @id @default(autoincrement())
-  userId           Int
-  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  merchant         String
-  normalizedName   String   // Cleaned merchant name for matching
-  categoryId       Int
-  category         Category @relation(fields: [categoryId], references: [id])
-  confidence       Float    @default(1.0)
-  useCount         Int      @default(1)
-  lastUsed         DateTime @default(now())
-  messageType      String   // Type of transaction this applies to
-  averageAmount    Float?
-  amountRange      Json?    // {"min": 10, "max": 100} for amount patterns
-  timePatterns     Json?    // {"preferredHours": [9,10,11], "preferredDays": [1,2,3]}
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-  
+  id             Int      @id @default(autoincrement())
+  userId         Int
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  merchant       String
+  normalizedName String // Cleaned merchant name for matching
+  categoryId     Int
+  category       Category @relation(fields: [categoryId], references: [id])
+  confidence     Float    @default(1.0)
+  useCount       Int      @default(1)
+  lastUsed       DateTime @default(now())
+  messageType    String // Type of transaction this applies to
+  averageAmount  Float?
+  amountRange    Json? // {"min": 10, "max": 100} for amount patterns
+  timePatterns   Json? // {"preferredHours": [9,10,11], "preferredDays": [1,2,3]}
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
   @@unique([userId, merchant, categoryId, messageType])
   @@index([userId, normalizedName])
 }
 
 model CategoryPattern {
-  id                Int      @id @default(autoincrement())
-  userId            Int
-  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  categoryId        Int
-  category          Category @relation(fields: [categoryId], references: [id])
-  messageType       String
-  typicalAmounts    Json     // {"ranges": [{"min": 20, "max": 50, "frequency": 0.7}]}
-  timePatterns      Json     // Time-based patterns for this category
-  keywordPatterns   Json     // Learned keywords beyond the static ones
-  confidenceWeight  Float    @default(1.0)
-  transactionCount  Int      @default(0)
-  lastUpdated       DateTime @default(now())
-  createdAt         DateTime @default(now())
-  
+  id               Int      @id @default(autoincrement())
+  userId           Int
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  categoryId       Int
+  category         Category @relation(fields: [categoryId], references: [id])
+  messageType      String
+  typicalAmounts   Json // {"ranges": [{"min": 20, "max": 50, "frequency": 0.7}]}
+  timePatterns     Json // Time-based patterns for this category
+  keywordPatterns  Json // Learned keywords beyond the static ones
+  confidenceWeight Float    @default(1.0)
+  transactionCount Int      @default(0)
+  lastUpdated      DateTime @default(now())
+  createdAt        DateTime @default(now())
+
   @@unique([userId, categoryId, messageType])
   @@index([userId, categoryId])
 }
 
 model CliqPattern {
-  id                 Int      @id @default(autoincrement())
-  userId             Int
-  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  senderName         String
-  normalizedSender   String   // Cleaned sender name
-  categoryId         Int
-  category           Category @relation(fields: [categoryId], references: [id])
-  transactionType    String   // 'income' or 'expense'
-  isRecurring        Boolean  @default(false)
-  frequency          String?  // 'weekly', 'monthly', 'yearly'
-  averageAmount      Float
-  amountVariance     Float    @default(0.0)
-  confidence         Float    @default(1.0)
-  useCount           Int      @default(1)
-  lastSeen           DateTime @default(now())
-  isBusinessLike     Boolean  @default(false) // Detected business vs personal
-  patterns           Json?    // Additional patterns specific to this sender
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
-  
+  id               Int      @id @default(autoincrement())
+  userId           Int
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  senderName       String
+  normalizedSender String // Cleaned sender name
+  categoryId       Int
+  category         Category @relation(fields: [categoryId], references: [id])
+  transactionType  String // 'income' or 'expense'
+  isRecurring      Boolean  @default(false)
+  frequency        String? // 'weekly', 'monthly', 'yearly'
+  averageAmount    Float
+  amountVariance   Float    @default(0.0)
+  confidence       Float    @default(1.0)
+  useCount         Int      @default(1)
+  lastSeen         DateTime @default(now())
+  isBusinessLike   Boolean  @default(false) // Detected business vs personal
+  patterns         Json? // Additional patterns specific to this sender
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
   @@unique([userId, normalizedSender, transactionType])
   @@index([userId, senderName])
   @@index([isRecurring])
 }
 
 model RecurringPayment {
-  id                Int                     @id @default(autoincrement())
-  userId            Int
-  user              User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  name              String                  // "Rent", "Car Loan", "Gym Membership"
-  description       String?                 // Optional description
-  amount            Float                   // Expected amount
-  categoryId        Int
-  category          Category                @relation(fields: [categoryId], references: [id])
-  frequency         RecurringFrequency      // Monthly, Weekly, etc.
-  dayOfMonth        Int?                    // 15 for "15th of each month"
-  dayOfWeek         Int?                    // 1-7 for weekly payments
-  isActive          Boolean                 @default(true)
-  isAutoDetected    Boolean                 @default(false) // true if detected automatically
-  merchant          String?                 // Associated merchant if any
-  lastProcessed     DateTime?               // Last time this was processed
-  nextDue           DateTime                // Next expected payment date
-  tolerance         Json?                   // {"amount": {"min": 90, "max": 110}, "days": 3}
-  reminders         Json?                   // {"enabled": true, "daysBefore": [7, 3, 1]}
-  detectionPattern  Json?                   // Pattern used for auto-detection
-  createdAt         DateTime                @default(now())
-  updatedAt         DateTime                @updatedAt
-  
+  id               Int                @id @default(autoincrement())
+  userId           Int
+  user             User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name             String // "Rent", "Car Loan", "Gym Membership"
+  description      String? // Optional description
+  amount           Float // Expected amount
+  categoryId       Int
+  category         Category           @relation(fields: [categoryId], references: [id])
+  frequency        RecurringFrequency // Monthly, Weekly, etc.
+  dayOfMonth       Int? // 15 for "15th of each month"
+  dayOfWeek        Int? // 1-7 for weekly payments
+  isActive         Boolean            @default(true)
+  isAutoDetected   Boolean            @default(false) // true if detected automatically
+  merchant         String? // Associated merchant if any
+  lastProcessed    DateTime? // Last time this was processed
+  nextDue          DateTime // Next expected payment date
+  tolerance        Json? // {"amount": {"min": 90, "max": 110}, "days": 3}
+  reminders        Json? // {"enabled": true, "daysBefore": [7, 3, 1]}
+  detectionPattern Json? // Pattern used for auto-detection
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
   @@index([userId, isActive])
   @@index([nextDue])
   @@index([isAutoDetected])
@@ -259,8 +261,8 @@ model FinancialGoal {
   autoContribute  Boolean           @default(false)
   monthlyTarget   Float?
   reminderEnabled Boolean           @default(true)
-  reminderDay     Int?              // Day of month for reminders (1-31)
-  metadata        Json?             // Store additional goal-specific data
+  reminderDay     Int? // Day of month for reminders (1-31)
+  metadata        Json? // Store additional goal-specific data
   transactions    GoalTransaction[]
   milestones      GoalMilestone[]
   createdAt       DateTime          @default(now())
@@ -278,7 +280,7 @@ model GoalTransaction {
   amount          Float
   type            TransactionType
   description     String?
-  source          String?         // Where the money came from/went to
+  source          String? // Where the money came from/went to
   linkedExpense   Expense?        @relation(fields: [linkedExpenseId], references: [id])
   linkedExpenseId Int?
   linkedIncome    Income?         @relation(fields: [linkedIncomeId], references: [id])
@@ -298,7 +300,7 @@ model GoalMilestone {
   targetAmount Float
   isReached    Boolean       @default(false)
   reachedAt    DateTime?
-  rewardText   String?       // What reward user gets for reaching this milestone
+  rewardText   String? // What reward user gets for reaching this milestone
   createdAt    DateTime      @default(now())
 
   @@index([goalId, targetAmount])
@@ -331,4 +333,82 @@ enum TransactionType {
   CONTRIBUTION
   WITHDRAWAL
   ADJUSTMENT
+}
+
+model Bill {
+  id             Int            @id @default(autoincrement())
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId         Int
+  name           String // "Electric Bill", "Internet Bill", etc.
+  description    String? // Optional description
+  payee          String // Who to pay (company name)
+  amount         Float? // Expected amount (can be null for variable bills)
+  isFixedAmount  Boolean        @default(true) // false for variable amounts
+  category       Category?      @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  categoryId     Int?
+  dueDate        DateTime // Next due date
+  frequency      BillFrequency // How often this bill occurs
+  dayOfMonth     Int? // For monthly bills (1-31)
+  dayOfWeek      Int? // For weekly bills (1-7, Monday = 1)
+  isActive       Boolean        @default(true)
+  autoReminder   Boolean        @default(true)
+  reminderDays   Json           @default("[7, 3, 1]") // Days before due date to send reminders
+  lastPaidDate   DateTime? // When was this bill last paid
+  lastPaidAmount Float? // Amount of last payment
+  nextDueDate    DateTime // Calculated next due date
+  isOverdue      Boolean        @default(false)
+  overdueByDays  Int            @default(0)
+  paymentHistory BillPayment[]
+  reminders      BillReminder[]
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@index([userId, isActive])
+  @@index([nextDueDate])
+  @@index([isOverdue])
+}
+
+model BillPayment {
+  id               Int      @id @default(autoincrement())
+  bill             Bill     @relation(fields: [billId], references: [id], onDelete: Cascade)
+  billId           Int
+  amount           Float
+  paidDate         DateTime
+  wasOnTime        Boolean  @default(true)
+  daysLate         Int      @default(0)
+  notes            String?
+  paymentMethod    String? // "Bank Transfer", "Cash", "Credit Card", etc.
+  confirmationCode String? // Payment confirmation number
+  createdAt        DateTime @default(now())
+
+  @@index([billId, paidDate])
+}
+
+model BillReminder {
+  id           Int              @id @default(autoincrement())
+  bill         Bill             @relation(fields: [billId], references: [id], onDelete: Cascade)
+  billId       Int
+  reminderDate DateTime // When to send the reminder
+  daysBefore   Int // How many days before due date
+  isSent       Boolean          @default(false)
+  sentAt       DateTime?
+  reminderType BillReminderType @default(UPCOMING)
+  createdAt    DateTime         @default(now())
+
+  @@index([reminderDate, isSent])
+  @@index([billId])
+}
+
+enum BillFrequency {
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+  YEARLY
+  CUSTOM
+}
+
+enum BillReminderType {
+  UPCOMING
+  DUE_TODAY
+  OVERDUE
 }

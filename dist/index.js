@@ -15,10 +15,12 @@ const cliq_routes_1 = __importDefault(require("./routes/cliq.routes"));
 const recurringPayment_routes_1 = __importDefault(require("./routes/recurringPayment.routes"));
 const advisor_routes_1 = __importDefault(require("./routes/advisor.routes"));
 const financialGoals_routes_1 = __importDefault(require("./routes/financialGoals.routes"));
+const bills_routes_1 = __importDefault(require("./routes/bills.routes"));
 const auth_middleware_1 = require("./middleware/auth.middleware");
 const errorHandler_1 = require("./middleware/errorHandler");
 const rateLimit_1 = require("./middleware/rateLimit");
 const tokenCleanup_1 = require("./services/tokenCleanup");
+const billScheduler_1 = require("./services/billScheduler");
 const swagger_1 = require("./config/swagger");
 const postman_1 = require("./config/postman");
 const app = (0, express_1.default)();
@@ -77,6 +79,7 @@ app.use('/api/cliq', auth_middleware_1.authenticate, cliq_routes_1.default);
 app.use('/api/recurring-payments', auth_middleware_1.authenticate, recurringPayment_routes_1.default);
 app.use('/api/advisor', auth_middleware_1.authenticate, advisor_routes_1.default);
 app.use('/api/financial-goals', financialGoals_routes_1.default);
+app.use('/api/bills', bills_routes_1.default);
 // Error handling
 app.use(errorHandler_1.errorHandler);
 app.get('/', (_req, res) => res.send('Expense Tracker API'));
@@ -86,4 +89,7 @@ app.listen(PORT, '0.0.0.0', () => {
     // Start token cleanup service
     tokenCleanup_1.TokenCleanupService.startCleanup();
     console.log('Token cleanup service started');
+    // Start bill scheduler service
+    billScheduler_1.BillSchedulerService.startScheduler();
+    console.log('Bill scheduler service started');
 });

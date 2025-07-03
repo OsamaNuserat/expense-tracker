@@ -70,7 +70,8 @@ export const getNotificationSettings = async (req: Request, res: Response) => {
     enabled: true,
     budgetAlerts: true,
     transactionAlerts: true,
-    recurringPaymentReminders: true
+    recurringPaymentReminders: true,
+    billReminders: true
   };
 
   res.json({
@@ -88,14 +89,16 @@ export const updateSettings = async (req: Request, res: Response) => {
     enabled, 
     budgetAlerts, 
     transactionAlerts, 
-    recurringPaymentReminders 
+    recurringPaymentReminders,
+    billReminders
   } = req.body;
 
   const settings = {
     ...(enabled !== undefined && { enabled }),
     ...(budgetAlerts !== undefined && { budgetAlerts }),
     ...(transactionAlerts !== undefined && { transactionAlerts }),
-    ...(recurringPaymentReminders !== undefined && { recurringPaymentReminders })
+    ...(recurringPaymentReminders !== undefined && { recurringPaymentReminders }),
+    ...(billReminders !== undefined && { billReminders })
   };
 
   await updateNotificationSettings(userId, settings);

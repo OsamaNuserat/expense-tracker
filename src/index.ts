@@ -10,10 +10,12 @@ import cliqRoutes from './routes/cliq.routes';
 import recurringPaymentRoutes from './routes/recurringPayment.routes';
 import advisorRoutes from './routes/advisor.routes';
 import financialGoalsRoutes from './routes/financialGoals.routes';
+import billsRoutes from './routes/bills.routes';
 import { authenticate } from './middleware/auth.middleware';
 import { errorHandler } from './middleware/errorHandler';
 import { generalRateLimit } from './middleware/rateLimit';
 import { TokenCleanupService } from './services/tokenCleanup';
+import { BillSchedulerService } from './services/billScheduler';
 import { setupSwagger } from './config/swagger';
 import { setupPostmanExport } from './config/postman';
 
@@ -78,6 +80,7 @@ app.use('/api/cliq', authenticate, cliqRoutes);
 app.use('/api/recurring-payments', authenticate, recurringPaymentRoutes);
 app.use('/api/advisor', authenticate, advisorRoutes);
 app.use('/api/financial-goals', financialGoalsRoutes);
+app.use('/api/bills', billsRoutes);
 
 // Error handling
 app.use(errorHandler);
@@ -91,4 +94,8 @@ app.listen(PORT, '0.0.0.0', () => {
   // Start token cleanup service
   TokenCleanupService.startCleanup();
   console.log('Token cleanup service started');
+  
+  // Start bill scheduler service
+  BillSchedulerService.startScheduler();
+  console.log('Bill scheduler service started');
 });
